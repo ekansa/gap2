@@ -1,0 +1,130 @@
+﻿-- phpMyAdmin SQL Dump
+-- version 3.4.5
+-- http://www.phpmyadmin.net
+--
+-- Host: localhost
+-- Generation Time: Feb 15, 2013 at 07:46 AM
+-- Server version: 5.5.16
+-- PHP Version: 5.3.8
+
+SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
+--
+-- Database: `gap2`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gap_batches`
+--
+
+CREATE TABLE IF NOT EXISTS `gap_batches` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parserID` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `status` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `created` datetime NOT NULL,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `note` text NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `parerID` (`parserID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=7 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gap_documents`
+--
+
+CREATE TABLE IF NOT EXISTS `gap_documents` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `parserID` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `batchID` int(11) DEFAULT NULL,
+  `status` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `url` varchar(200) NOT NULL,
+  `created` datetime NOT NULL,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `pLinks` text,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `parerID` (`parserID`),
+  KEY `batchID` (`batchID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=5 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gap_gazrefs`
+--
+
+CREATE TABLE IF NOT EXISTS `gap_gazrefs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tokenID` int(11) NOT NULL,
+  `docID` int(11) NOT NULL,
+  `batchID` int(11) NOT NULL,
+  `gazRef` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `unlockRef` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `sourceRef` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  `docName` varchar(200) NOT NULL,
+  `gazName` varchar(200) NOT NULL,
+  `uriID` int(11) NOT NULL,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `tokenID` (`tokenID`),
+  KEY `docID` (`docID`),
+  KEY `docName` (`docName`),
+  KEY `gazName` (`gazName`),
+  KEY `uriID` (`uriID`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=90 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gap_gazuris`
+--
+
+CREATE TABLE IF NOT EXISTS `gap_gazuris` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `uri` varchar(200) NOT NULL,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uri` (`uri`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=86 ;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `gap_tokens`
+--
+
+CREATE TABLE IF NOT EXISTS `gap_tokens` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `docID` int(11) NOT NULL,
+  `batchID` int(11) NOT NULL,
+  `pageID` int(11) NOT NULL,
+  `sentID` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `tokenID` varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `pws` tinyint(1) NOT NULL,
+  `gazRef` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
+  `token` varchar(200) NOT NULL,
+  `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `docID` (`docID`),
+  KEY `pageID` (`pageID`),
+  KEY `token` (`token`),
+  KEY `gazRef` (`gazRef`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=41032 ;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

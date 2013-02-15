@@ -1,0 +1,14 @@
+[general]
+db.adapter = PDO_MYSQL
+db.config.host = localhost
+db.config.username = 
+db.config.password = 
+db.config.dbname = 
+db.config.charset = UTF8
+edina.config.APIuri = http://unlock.edina.ac.uk/text-api
+edina.config.requestHost = http://unlock.edina.ac.uk/text-api
+edina.config.lookupBaseURL = http://unlock.edina.ac.uk/ws/featureLookup
+edina.config.user = 
+edina.config.password = 
+edina.config.userKey = 
+books.config.sentsPerPage = 10

@@ -1,0 +1,320 @@
+<?php
+$host = App_Config::getHost();
+$places = $this->places;
+
+?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>GAP: Viewing Books Related to <?php echo $places->placeName; ?></title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="/css/template_style.css" />
+	<link rel="alternate" type="application/atom+xml" title="Atom feed of results" href="<?php echo $host.'/places/'.$places->pleiadesID.'/books.atom'; ?>" />
+	<link rel="alternate" type="application/json" title="JSON of results" href="<?php echo $host.'/places/'.$places->pleiadesID.'/books.json'; ?>" />
+<style type="text/css">
+	
+	
+	div.tokenCount{
+	    font-family: Arial, Helvetica, sans-serif;
+	    font-size: 14px;
+	    font-weight:bold;
+	}
+	div.relatedMC{
+	    font-family: Arial, Helvetica, sans-serif;
+	    font-size: 10px;
+	}
+      
+      </style>
+      
+      <script type="text/javascript" src="https://www.google.com/jsapi?key=ABQIAAAA3-lTM9R7VNkgT0bRXy04ORTc7JMGZtuQ8NNgnMTM7MvoXtpKHBRXjYtpPUcaTA4JtDkxhPPn_l7vsw"></script>
+      <script type="text/javascript">
+        <!--
+        
+        <?php
+        
+       
+        echo "var OSfeedURI = 'http://opencontext.org/sets/.atom?targURI=".urlencode($places->placeURI)."'; \n";
+        echo "var OSURI = 'http://opencontext.org/sets/?targURI=".urlencode($places->placeURI)."'; \n";
+    
+    
+        ?>
+        
+        -->
+        </script>
+      
+      
+      <script type="text/javascript">
+      <!--
+      
+      google.load("feeds", "1");
+
+    function initialize() {
+	OSfeedURI = false;
+        if(OSfeedURI != false){
+            var feed = new google.feeds.Feed(OSfeedURI);
+            //feed.setResultFormat(google.feeds.Feed.XML_FORMAT);
+            feed.setResultFormat(google.feeds.Feed.MIXED_FORMAT);
+            
+            feed.load(function(result) {
+              if (!result.error) {
+                var OSnamespace = "http://a9.com/-/spec/opensearchrss/1.0/";
+                var AtomNamespace = "http://www.w3.org/2005/Atom";
+                
+                var feedNode = result.xmlDocument.getElementsByTagNameNS(AtomNamespace, "feed");
+                //alert(feedNode.length);
+                
+                var osCountResult = result.xmlDocument.getElementsByTagNameNS("*", "totalResults");
+                //alert(osCountResult[0].textContent);
+                
+                var countContainer = document.getElementById("osCount");
+                countContainer.appendChild(document.createTextNode("(" + osCountResult[0].textContent + " results)"));
+                
+                var container = document.getElementById("feed"); 
+                for (var i = 0; i < result.feed.entries.length; i++) {
+                  var entry = result.feed.entries[i];
+                  var div = document.createElement("div");
+		  var alink = document.createElement("a");
+                  alink.appendChild(document.createTextNode(entry.title));
+		  alink.setAttribute('href', entry.link);
+		  div.appendChild(alink);
+                  container.appendChild(div);
+                }
+              }
+            });
+        }
+    }
+    google.setOnLoadCallback(initialize);
+      
+      
+      
+      -->
+      </script>
+    </head>
+    
+<body>
+
+<div id="menu-top">
+	<ul>
+		<li><a href="http://googleancientplaces.wordpress.com/about/" title="About GAP"><span>About</span></a></li>
+		<li><a href="http://googleancientplaces.wordpress.com/the-team/" title="Project Team"><span>Team</span></a></li>
+		<li><a href="http://googleancientplaces.wordpress.com/" title="Project Weblog"><span>Blog</span></a></li>
+		<li><a href="http://www.open.ac.uk/Arts/hestia/index.html" title="Geography and the Histories"><span>HESTIA</span></a></li>
+		<li><a href="http://opencontext.org" title="Open Context: Archaeological Data Publishing"><span>Open Context</span></a></li>
+	</ul>
+</div><!--menu-top-->
+
+<!-- mejobloggs: sorry about all these wrappers. It is a lot of structural markup .
+		If you know how to do this with less structural markup, contact my throught my
+		OWD user page: http://www.openwebdesign.org/userinfo.phtml?user=mejobloggs -->
+<div id="wrapper-header">
+<div id="header">
+	<!-- be sure to cite banner photo, from Flickr http://www.flickr.com/photos/rpastrana/3556526766/sizes/o/in/photostream/ -->
+<div id="wrapper-header2">
+<div id="wrapper-header3">
+	<div id="headerText">
+		<h1>Google Ancient Places</h1>
+	</div>
+</div><!--wrapper-header3-->
+</div><!--wrapper-header2-->
+</div><!--header-->
+</div><!--wrapper-header-->
+
+<div id="wrapper-content">
+	<div id="wrapper-menu-page">
+	<div id="menu-page">
+		
+		<div style='padding:5px; '>
+		<h3>Browse Other Places</h3>
+		
+		<ul style='text-align:left; list-style-type:disc; margin-left:20px;'>
+			<?php
+			
+			$places->getBrowsePlaces();
+			if($places->browsePrevURI != false){
+			    echo '<li><a href="./books?uri='.urlencode($places->browsePrevURI).'">'.$places->browsePrevName.'</a></li>'.chr(13); 
+			}
+			
+			if($places->browseNextURI != false){
+			    echo '<li><a href="./books?uri='.urlencode($places->browseNextURI).'">'.$places->browseNextName.'</a></li>'.chr(13); 
+			}
+		
+			?>
+		</ul>
+		
+		<h3 style="text-align:left; padding-left:4px;"><em>Possibly related places</em></h3>
+		<ul style='text-align:left; list-style-type:disc; margin-left:20px;'>
+			<?php
+			$places->getSimilarPlaces();
+			if(is_array($places->similarPlaces)){
+			    foreach($places->similarPlaces as $splace){
+				echo '<li><a href="./books?uri='.urlencode($splace["uri"]).'">'.$splace["name"].'</a></li>'.chr(13); 
+			    }
+			}
+			else{
+			    echo '<li>(None)</li>'.chr(13); 
+			}
+			
+			?>
+		</ul>
+		
+		<h3 style="text-align:left; padding-left:4px;"><em>Examples with related material culture</em></h3>
+		<ul style='text-align:left; list-style-type:disc; margin-left:20px;'>	
+			<li><a href="./books?uri=http%3A%2F%2Fpleiades.stoa.org%2Fplaces%2F658381">Antioch</a></li>
+			<li><a href="./books?uri=http%3A%2F%2Fpleiades.stoa.org%2Fplaces%2F520985">Byzantium</a></li>
+			<li><a href="./books?uri=http%3A%2F%2Fpleiades.stoa.org%2Fplaces%2F511218">Cyzicus</a></li>
+		</ul>
+		</div>
+		
+		<div style='margin-top:20px; padding:5px; background-color:#F2F2F2;'>
+		
+		<?php
+		    $places->get_related_OC();
+		    if($places->OCdata != false){
+			$OCData = $places->OCdata;
+			$OCfound = $OCData["numFound"];
+		    }
+		    else{
+			$OCData = false;
+			$OCfound = 0;
+		    }
+		?>
+		
+		<div style="display:table-row;">
+		    <div style="display:table-cell;">
+			<a href="<?php echo "http://opencontext.org/sets/?targURI=".urlencode($places->placeURI); ?>">
+			<img src="http://opencontext.org/images/general/OC_logo_tiny.png" alt="OpenContext Logo" />
+			</a>
+		    </div>
+		    <div style="display:table-cell; padding:2px; vertical-align:middle;">
+			Related Material Culture
+			<span id="osCount"></span>
+			<?php echo "(".$OCfound.")"; ?>
+		    </div>
+		</div>
+		
+		<div id="feed" style="padding:4px;" class="relatedMC"></div>
+		
+		</div>
+		
+		<div style="padding:4px;" >
+		    <?php
+		    
+		    if($OCData !=false){
+			
+			$maxShow = 5;
+			$itemCount = 0;
+			foreach($OCData["results"] as $item){
+			    
+			    echo "<div>";
+			    echo "<a href='".$item["uri"]."' title='".$item["project"].": ".$item["label"]." (".$item["category"].")' >";
+			    echo "<img src='".$item["thumbIcon"]."' alt='Thumbnail' width='100' />";
+			    echo "</a>";
+			    echo "</div>";
+			    $itemCount ++;
+			    if($itemCount >= $maxShow ){
+				break;
+			    }
+			}
+			
+			
+			
+		    }
+		    
+		    ?>
+		</div>
+		<!--
+		<p><img src="/images/logo.png" width="165" height="80" alt="" /></p>
+		-->
+
+	</div><!--menu-page-->
+	</div><!--wrapper-menu-page-->
+	
+	<div id="content">
+            
+	    <h2 style="text-align:center;">Index of Books Referencing <em><?php echo $places->placeName; ?></em></h2>
+		<p style="text-align:center;">Pleaides URI: <em><a href="<?php echo $places->placeURI; ?>"><?php echo $places->placeURI; ?></a></em></p>
+		<div style="border: thin solid #CCCCCC; padding: 5px;">
+		<div style="display:table-row;">
+		    <div style="display:table-cell; padding:5px; text-align:center;" class="bodyText">
+			<strong>Identified References to this Place</strong>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" class="bodyText">
+			<strong>Title</strong>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" class="bodyText">
+			<strong>Author(s)</strong>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" class="bodyText">
+			<strong>Publication Year</strong>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" class="bodyText">
+			<strong>Link to Source Text</strong>
+		    </div>
+		</div>
+	      
+		<?php
+		
+		$darkRow = true;
+		foreach($places->placeBookRefs as $row){
+		    
+		    if($darkRow){
+			$rowStyle = "display:table-row; background-color: #F4F4F4";
+			$darkRow = false;
+		    }
+		    else{
+			$rowStyle = "display:table-row;";
+			$darkRow = true;
+		    }
+		    
+		    echo '<div style="'.$rowStyle.'">'.chr(13);
+		?>
+		
+		    <div style="display:table-cell; padding:5px; text-align:center;" class="tokenCount">
+			    <?php echo $row["tokenCount"]; ?>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" ">
+			    <?php echo $row["title"]; ?>
+			    <br/>
+			    <a href="<?php
+			    
+			    $bookRootURI = $host."/gapvis/index.html#book/";
+			    $bookRootURI .= $row["id"];
+			    
+			    if($places->pleiadesID){
+				 $bookRootURI .= "/place/".$places->pleiadesID;
+			    }
+			    
+			    
+			    echo $bookRootURI;
+			    
+			    ?>">(View GAPvis book overview of this place)</a>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" >
+			    <?php echo $row["authors"]; ?>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" >
+			    <?php echo $row["date"]; ?>
+		    </div>
+		    <div style="display:table-cell; padding:5px;" >
+			<strong><a href='<?php echo $row['uri']; ?>' title='Link this book'><?php echo $row['uri']; ?></a></strong>
+		    </div>
+		</div>
+		
+		<?php
+		}//end loop
+		
+		echo "Subscribe to these results as an < href='".$host."/places/".$places->pleiadesID."/books.atom'>Atom Feed</a>";
+		
+		?>
+	    
+		</div>
+	</div>
+	
+	<div id="bottom">
+	</div>
+	
+    </div>
+
+</body>
+</html>

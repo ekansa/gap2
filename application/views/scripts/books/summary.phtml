@@ -1,0 +1,264 @@
+<?php
+
+
+$host = App_Config::getHost();
+$book = $this->book;
+
+$placeOutput = array();
+$allPlaces = $book->allPlaces;
+$maxCount = $allPlaces[0]["placeCount"];
+$pleiadesBase = "http://pleiades.stoa.org/places/"; //base uri for pleides places
+
+$latTotal = 0;
+$lonTotal = 0;
+$placeCount = count($allPlaces);
+foreach($book->allPlaces as $row){
+	$pleiadesURI = 	$pleiadesBase.$row["pleiadesID"];
+	$queryURI = "../places/books?uri=".urlencode($pleiadesURI);
+	$lat = $row["lat"] +0;
+	$lon = $row["lon"] +0;
+	$latTotal += $lat;
+	$lonTotal += $lon;
+	
+	$placeCount = $row["placeCount"]+0;
+	$name = $row["name"];
+	$placeOutput[] = array("name" => $name,
+			       "count" => $placeCount,
+			       "lat" => $lat,
+			       "lon" => $lon,
+			       "uri" => $pleiadesURI,
+			       "query" => $queryURI);
+}
+
+
+//100
+// 80
+// 60
+// 40
+// 20
+
+
+
+?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>GAP: Summary of <?php echo $book->bookTitle; ?></title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="/css/template_style.css" />
+	
+	<style type="text/css">
+	
+	#map {
+	height: 400px;
+	width: 100%;
+}
+	
+      </style>
+      
+     	
+<script src="http://maps.google.com/maps/api/js?sensor=false&amp;key=ABQIAAAA3-lTM9R7VNkgT0bRXy04ORTc7JMGZtuQ8NNgnMTM7MvoXtpKHBRXjYtpPUcaTA4JtDkxhPPn_l7vsw" type="text/javascript"></script> 
+
+      
+      <script type="text/javascript">
+      
+ /* <![CDATA[ */
+ 
+	 <?php
+        
+        echo "var maxPlaceCount = ".$maxCount."; \n";
+        //echo "var homeLat = ".round(($latTotal / $placeCount),0)."; \n";
+	//echo "var homeLon = ".round(($lonTotal / $placeCount),0)."; \n";
+        
+        echo "var allPlaces = ".Zend_Json::encode($placeOutput)."; \n";
+    
+    
+        ?>
+ 
+	var homeLat = 25.092773;
+	var homeLon = 38.651198;
+	var ie = (document.all) ? true : false; 
+      var icon1 = "/images/red-100.png";
+      var icon2 = "/images/red-80.png";
+      var icon3 = "/images/red-60.png";
+      var icon4 = "/images/red-40.png";
+      var icon5 = "/images/red-20.png";
+      
+      function initialize() {
+
+	var selectedTopo = new google.maps.LatLng(homeLon,homeLat);
+	var myOptions = {
+	  zoom: 4,
+	  center: selectedTopo,
+	  mapTypeId: google.maps.MapTypeId.SATELLITE
+	}
+       
+	var map = new google.maps.Map(document.getElementById("map"), myOptions);
+		
+		var countLevel = 1;
+		var actIcon = icon1;
+		
+		
+	      for(i=0; i<allPlaces.length; i++) {
+		
+			var actPlaceCount = allPlaces[i]["count"];
+			
+			
+			if(actPlaceCount >= (maxPlaceCount *.8)) {
+				countLevel = 1;
+				actIcon = icon1;
+			}
+			if((actPlaceCount < (maxPlaceCount *.8)) && (actPlaceCount >= (maxPlaceCount *.6)) ) {
+				countLevel = 2;
+				actIcon = icon2;
+			}
+			if((actPlaceCount < (maxPlaceCount *.6)) && (actPlaceCount >= (maxPlaceCount *.4)) ) {
+				countLevel = 3;
+				actIcon = icon3;
+			}
+			if((actPlaceCount < (maxPlaceCount *.4)) && (actPlaceCount >= (maxPlaceCount *.2)) ) {
+				countLevel = 4;
+				actIcon = icon4;
+			}
+			if(actPlaceCount < (maxPlaceCount *.2)) {
+				countLevel = 5;
+				actIcon = icon4;
+			}
+			
+		      
+		      (function (){
+			      var myLatlng = new google.maps.LatLng(allPlaces[i]["lat"], allPlaces[i]["lon"]);
+			      var myTitle = allPlaces[i]["name"];
+		      
+		      
+			      var marker = new google.maps.Marker({
+				      position: myLatlng, 
+				      map: map,
+				      title: myTitle,
+				      icon: actIcon
+				  });
+			      
+			      var myHtml = "<table style='width:100%;'><tr><td><b>" + allPlaces[i]["name"];
+			      myHtml = myHtml + "</b><br/>Count: " + actPlaceCount;
+			      myHtml = myHtml + "</td></tr><tr><td><a href='" + allPlaces[i]["uri"];
+			      myHtml = myHtml + "'>(Pleiades Link)</a><br/><a href='" + allPlaces[i]["query"];
+			      myHtml = myHtml + "'>(Refs in GAP books)</a></td></tr></table>";
+			     
+			      
+			      var infowindow;
+			      google.maps.event.addListener(marker, "click", function() {
+				if (infowindow) infowindow.close();
+				infowindow = new google.maps.InfoWindow({content: myHtml});
+				infowindow.open(map, marker);
+			      });
+		})();
+	}//end loop
+
+ 
+}//end function
+ /* ]]> */      
+      
+      
+      </script>
+    </head>
+    
+<body onload="initialize()">
+
+<div id="menu-top">
+	<ul>
+		<li><a href="http://googleancientplaces.wordpress.com/about/" title="About GAP"><span>About</span></a></li>
+		<li><a href="http://googleancientplaces.wordpress.com/the-team/" title="Project Team"><span>Team</span></a></li>
+		<li><a href="http://googleancientplaces.wordpress.com/" title="Project Weblog"><span>Blog</span></a></li>
+		<li><a href="http://www.open.ac.uk/Arts/hestia/index.html" title="Geography and the Histories"><span>HESTIA</span></a></li>
+		<li><a href="http://opencontext.org" title="Open Context: Archaeological Data Publishing"><span>Open Context</span></a></li>
+	</ul>
+</div><!--menu-top-->
+
+<!-- mejobloggs: sorry about all these wrappers. It is a lot of structural markup .
+		If you know how to do this with less structural markup, contact my throught my
+		OWD user page: http://www.openwebdesign.org/userinfo.phtml?user=mejobloggs -->
+<div id="wrapper-header">
+<div id="header">
+	<!-- be sure to cite banner photo, from Flickr http://www.flickr.com/photos/rpastrana/3556526766/sizes/o/in/photostream/ -->
+<div id="wrapper-header2">
+<div id="wrapper-header3">
+	<div id="headerText">
+		<h1>Google Ancient Places</h1>
+	</div>
+</div><!--wrapper-header3-->
+</div><!--wrapper-header2-->
+</div><!--header-->
+</div><!--wrapper-header-->
+
+<div id="wrapper-content">
+	<div id="wrapper-menu-page">
+	<div id="menu-page">
+		
+		<div style='padding:5px; '>
+		<h3>Browse Other Books</h3>
+		
+		<ul style='text-align:left; list-style-type:disc; margin-left:20px;'>
+			<li><a href="../books/summary?book=3">Thucydides</a></li>
+			<li><a href="../books/summary?book=4">Livy</a></li>
+			<li><a href="../books/summary?book=5">Gibbon</a></li>
+			<li><a href="../books/summary?book=6">Josephus</a></li>
+		</ul>
+		
+		<!--
+		<h3 style="text-align:left; padding-left:4px;"><em>Possibly related places</em></h3>
+		<ul style='text-align:left; list-style-type:disc; margin-left:20px;'>
+			
+		</ul>
+		-->
+		
+		<h3 style="text-align:left; padding-left:4px;"><em>Examples with related material culture</em></h3>
+		<ul style='text-align:left; list-style-type:disc; margin-left:20px;'>	
+			<li><a href="../places/books?uri=http%3A%2F%2Fpleiades.stoa.org%2Fplaces%2F658381">Antioch</a></li>
+			<li><a href="../places/books?uri=http%3A%2F%2Fpleiades.stoa.org%2Fplaces%2F520985">Byzantium</a></li>
+			<li><a href="../places/books?uri=http%3A%2F%2Fpleiades.stoa.org%2Fplaces%2F511218">Cyzicus</a></li>
+		</ul>
+		</div>
+		
+		<div style='margin-top:20px; padding:5px; background-color:#F2F2F2;'>
+		
+			<div style="display:table-row;">
+			    <div style="display:table-cell;">
+				
+			    </div>
+			    <div style="display:table-cell; padding:2px; vertical-align:middle;">
+				
+			    </div>
+			</div>
+		</div>
+		
+		<!--
+		<p><img src="/images/logo.png" width="165" height="80" alt="" /></p>
+		-->
+
+	</div><!--menu-page-->
+	</div><!--wrapper-menu-page-->
+	
+	<div id="content">
+            
+	    <h2 style="text-align:center;">Summary of Places in <em><?php echo $book->bookTitle; ?></em></h2>
+		<div style="padding:5px;background-color:#F2F2F2;">
+			<h3>Book Description</h3>
+			<p><em><?php echo $book->bookTitle; ?></em></p>
+			<p><?php echo $book->bookAuthors." (".$book->bookDate.")"; ?></p>
+			<p>Book URI: <?php echo '<a href="'.$book->bookURI.'">'.$book->bookURI.'</a>'; ?></p>
+		</div>
+	      
+		<div id="map">
+		</div>
+	    
+		
+	</div>
+	
+	<div id="bottom">
+	</div>
+	
+    </div>
+
+</body>
+</html>

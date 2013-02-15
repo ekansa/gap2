@@ -1,0 +1,203 @@
+<?php
+$host = App_Config::getHost();
+$places = $this->places;
+
+if(!$places->placeURI){
+    $places->placeURI = "http://pleiades.stoa.org/places/".$places->pleiadesID;
+}
+
+
+$lastUpdateUNIX = false;
+$lastPublishedUNIX = false;
+foreach($places->placeBookRefs as $row){
+    $actUpdated = strtotime($row["updated"]);
+    if(!$lastUpdateUNIX || ($lastUpdateUNIX < $actUpdated)){
+	$lastUpdateUNIX = $actUpdated;
+    }
+    $actCreated = strtotime($row["created"]);
+    if(!$lastPublishedUNIX || ($lastPublishedUNIX < $actCreated)){
+	$lastPublishedUNIX = $actCreated;
+    }
+}
+
+
+
+    $atomFullDoc = new DOMDocument("1.0", "utf-8");
+    $root = $atomFullDoc->createElementNS("http://www.w3.org/2005/Atom", "feed");
+			
+    // add newlines and indent the output - this is at least useful for debugging and making the output easier to read
+    $atomFullDoc->formatOutput = true;
+    
+    $atomFullDoc->appendChild($root);
+    
+    
+    // Feed Title 
+    $feedTitle = $atomFullDoc->createElement("title");
+    $feedTitleText = $atomFullDoc->createTextNode('Books with references to '.$places->placeName);
+    $feedTitle->appendChild($feedTitleText);
+    $root->appendChild($feedTitle);
+
+
+    // Feed published element (as opposed to the entry updated element)
+    $feedPublished = $atomFullDoc->createElement("published");
+    // Retrieve the current date and time. Format it in RFC 3339 format. Store it in a text node 
+    $feedPublishedText = $atomFullDoc->createTextNode(date("Y-m-d\TH:i:s\-07:00", $lastPublishedUNIX));
+    $feedPublished->appendChild($feedPublishedText); 
+    //$root->appendChild($feedPublished);
+    
+    // Feed updated element (as opposed to the entry published element)
+    $feedUpdated = $atomFullDoc->createElement("updated");
+    //$updatedTime = OpenContext_OCConfig::last_update();
+    // Retrieve the current date and time. Format it in RFC 3339 format. Store it in a text node 
+    $feedUpdatedText = $atomFullDoc->createTextNode(date("Y-m-d\TH:i:s\-07:00", $lastUpdateUNIX));
+    $feedUpdated->appendChild($feedUpdatedText); 
+    $root->appendChild($feedUpdated);
+
+    // feed (self) link element
+    $feedLink = $atomFullDoc->createElement("link");
+    $feedLink->setAttribute("rel", "self");
+    $feedLink->setAttribute("href", $host.'/places/'.$places->pleiadesID.'/books.atom');
+    $root->appendChild($feedLink);
+    
+     // feed (HTML representation) link element
+    $feedLink = $atomFullDoc->createElement("link");
+    $feedLink->setAttribute("rel", "alternate");
+    $feedLink->setAttribute("type", "application/xhtml+xml");
+    $feedLink->setAttribute("href", $host.'/places/'.$places->pleiadesID.'/books');
+    $root->appendChild($feedLink);
+    
+     // feed (HTML representation) link element
+    $feedLink = $atomFullDoc->createElement("link");
+    $feedLink->setAttribute("rel", "alternate");
+    $feedLink->setAttribute("type", "application/json");
+    $feedLink->setAttribute("href", $host.'/places/'.$places->pleiadesID.'/books.json');
+    $root->appendChild($feedLink);
+    
+    // feed license link element
+    $feedLink = $atomFullDoc->createElement("link");
+    $feedLink->setAttribute("rel", "license");
+    $feedLink->setAttribute("type", "text/html");
+    $feedLink->setAttribute("href", "http://creativecommons.org/licenses/by/3.0/");
+    $root->appendChild($feedLink);
+    
+    // feed license link element
+    $feedLink = $atomFullDoc->createElement("link");
+    $feedLink->setAttribute("rel", "related");
+    $feedLink->setAttribute("type", "text/html");
+    $feedLink->setAttribute("href", $places->placeURI);
+    $root->appendChild($feedLink);
+    
+    //add feed id, use current link
+    $feedId = $atomFullDoc->createElement("id");
+    $feedIdText = $atomFullDoc->createTextNode($host.'/places/'.$places->pleiadesID.'/books.atom');
+    $feedId->appendChild($feedIdText);
+    $root->appendChild($feedId);
+
+    $feedAuthor = $atomFullDoc->createElement("author");
+    $authorName = $atomFullDoc->createElement("name");
+    $authorNameText = $atomFullDoc->createTextNode('Google Ancient Books Project');
+    $authorName->appendChild($authorNameText);
+    $feedAuthor->appendChild($authorName);
+    
+    $authorEmail = $atomFullDoc->createElement("email");
+    $authorEmailText = $atomFullDoc->createTextNode('akokai@berkeley.edu');
+    $authorEmail->appendChild($authorEmailText);
+    //$feedAuthor->appendChild($authorEmail);
+    
+    $authorURI = $atomFullDoc->createElement("uri");
+    $authorURIText = $atomFullDoc->createTextNode('http://googleancientplaces.wordpress.com/');
+    $authorURI->appendChild($authorURIText);
+    $feedAuthor->appendChild($authorURI);
+    
+    $root->appendChild($feedAuthor);
+
+    foreach($places->placeBookRefs as $row){
+	$actCreated = strtotime($row["created"]);
+	$actUpdate = strtotime($row["updated"]);
+	$xhtmlLink = $row['uri'];
+	
+	$entry = $atomFullDoc->createElement("entry");
+	
+        //id element
+        $entryId = $atomFullDoc->createElement("id");
+        $entryIdText = $atomFullDoc->createTextNode($xhtmlLink);
+        $entryId->appendChild($entryIdText);
+        $entry->appendChild($entryId);
+	
+	$entryTitle = $atomFullDoc->createElement("title");
+        $entryTitleText = $atomFullDoc->createTextNode($row["title"]);
+        $entryTitle->appendChild($entryTitleText);
+        $entry->appendChild($entryTitle);
+	
+	// Feed published element (as opposed to the entry updated element)
+        $entryPublished = $atomFullDoc->createElement("published");
+        // Retrieve the current date and time. Format it in RFC 3339 format. Store it in a text node 
+        $entryPublishedText = $atomFullDoc->createTextNode(date("Y-m-d\TH:i:s\-07:00", $actCreated));
+        $entryPublished->appendChild($entryPublishedText); 
+        $entry->appendChild($entryPublished);
+        
+        // Feed updated element (as opposed to the entry published element)
+        $entryUpdated = $atomFullDoc->createElement("updated");
+        // Retrieve the current date and time. Format it in RFC 3339 format. Store it in a text node 
+        $entryUpdatedText = $atomFullDoc->createTextNode(date("Y-m-d\TH:i:s\-07:00", $actUpdate));
+        $entryUpdated->appendChild($entryUpdatedText); 
+        $entry->appendChild($entryUpdated);
+	
+        
+        //link alternate element, alternate being XHTML
+	$entryLink = $atomFullDoc->createElement("link");
+        $entryLink->setAttribute("rel", "alternate");
+        $entryLink->setAttribute("type", "application/xhtml+xml");
+        $entryLink->setAttribute("href", $xhtmlLink);
+        $entry->appendChild($entryLink);
+	
+	$entryLink = $atomFullDoc->createElement("link");
+        $entryLink->setAttribute("rel", "self");
+        $entryLink->setAttribute("type", "application/xml");
+        $entryLink->setAttribute("href", $xhtmlLink."&format=xml");
+        $entry->appendChild($entryLink);
+	
+	$entryLink = $atomFullDoc->createElement("link");
+        $entryLink->setAttribute("rel", "related");
+        $entryLink->setAttribute("type", "application/xhtml+xml");
+        $entryLink->setAttribute("href", $host."/books/summary?book=".$row["bookID"]);
+	$entryLink->setAttribute("title", "GAP Summary of the book: ".$row["title"]);
+        $entry->appendChild($entryLink);
+	
+	$summaryText = "The book '".$row["title"];
+	$summaryText .= "(Authos: ".$row["authors"].", Year: ".$row["date"].")";
+	$summaryText .= "' has ".$row["tokenCount"]." reference(s) to the place '".$places->placeName."' (Pleiades URI: ".$places->placeURI.")";
+	$entrySum = $atomFullDoc->createElement("summary");
+        $entrySumText = $atomFullDoc->createTextNode($summaryText);
+        $entrySum->appendChild($entrySumText); 
+        $entry->appendChild($entrySum);
+	
+	
+	
+	$feedAuthor = $atomFullDoc->createElement("author");
+	$authorName = $atomFullDoc->createElement("name");
+	$authorNameText = $atomFullDoc->createTextNode('Google Ancient Books Project');
+	$authorName->appendChild($authorNameText);
+	$feedAuthor->appendChild($authorName);
+	
+	$authorEmail = $atomFullDoc->createElement("email");
+	$authorEmailText = $atomFullDoc->createTextNode('akokai@berkeley.edu');
+	$authorEmail->appendChild($authorEmailText);
+	//$feedAuthor->appendChild($authorEmail);
+	
+	$authorURI = $atomFullDoc->createElement("uri");
+	$authorURIText = $atomFullDoc->createTextNode('http://googleancientplaces.wordpress.com/');
+	$authorURI->appendChild($authorURIText);
+	$feedAuthor->appendChild($authorURI);
+	$entry->appendChild($feedAuthor);
+	
+	$root->appendChild($entry);
+    } 
+ 
+$out = $atomFullDoc->saveXML();
+
+header('Content-Type: application/atom+xml; charset=utf-8');
+echo $out;
+
+
+?>

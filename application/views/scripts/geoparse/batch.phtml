@@ -1,0 +1,96 @@
+<?php
+	 $batchObj = $this->batchObj;
+?>
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Geoparse Batch: <?php echo $batchObj->title; ?></title>
+	 <link href="../../css/bootstrap.css" rel="stylesheet" type="text/css" />
+	 <link href="../../css/bootstrap-responsive.css" rel="stylesheet" type="text/css" />
+	 <link href="../../css/gap.css" rel="stylesheet" type="text/css" />
+	 <link href="../batch/<?php echo $batchObj->id; ?>.json" rel="alternate" type="application/json" />
+	 
+	 <script type="text/javascript" src="../../js/gap/prototype-1.6.0.3.js" /> </script>
+    <script type="text/javascript" src="../../js/gap/json2.js"> </script>
+    <script type="text/javascript" src="../../js/gap/ajax_funcs.js" /> </script>
+	 
+	 <script type="text/javascript" >
+	 
+		  var batchID = <?php echo $batchObj->id; ?>;
+	 
+		  function checkStatus(){
+				var cStatus = document.getElementById("cStatus");
+				cStatus.innerHTML = "...checking status now...";
+				
+				var checkURI = "../../edina/batch-status";
+				var myAjax = new Ajax.Request(checkURI,
+					 {method: 'get',
+					 parameters:
+					 {
+						  batchID: batchID
+					 },
+					 onComplete: checkStatusDone }
+				);
+		  }
+	 
+		  function checkStatusDone(response){
+				window.location.reload();
+		  }
+	 
+	 
+	 </script>
+	 
+</head>
+
+<body>
+	 <div id="main">
+		  <h1>Geoparse Batch: <?php echo $batchObj->title; ?></h1>
+		  <table class="table table-striped" id="batch-tab">
+				<tr>
+					 <th>Status</th><td><?php echo $batchObj->status; ?></td>
+				</tr>
+				<tr>
+					 <th>Created</th><td><?php echo $batchObj->created; ?></td>
+				</tr>
+				<tr>
+					 <th>Updated</th><td><?php echo $batchObj->updated; ?></td>
+				</tr>
+				<tr>
+					 <th>Note</th><td><?php echo $batchObj->note; ?></td>
+				</tr>
+		  </table>
+		  <h3>Documents in this Batch</h3>
+		  
+		  <table class="table table-condensed table-bordered" id="batch-docs">
+				<thead>
+					 <tr>
+						  <th>Title</th>
+						  <th>URL</th>
+						  <th>status</th>
+					 </tr>
+				</thead>
+				<tbody>
+					 <?php
+					 foreach($batchObj->documents as $row){
+					 ?>
+					 <tr>
+						  <td><?php echo $row["title"]; ?></td>
+						  <td>
+								<a href="<?php echo $row["url"]; ?>" title="View this document" target="_blank">
+								<?php echo $row["url"]; ?>
+								</a>
+						  </td>
+						  <td id="doc-status-<?php echo $row["id"]; ?>"><?php echo $row["status"]; ?></td>
+					 </tr>	
+					 <?php  
+					 }//end loop
+					 ?>
+				</tbody>
+		  </table>
+		  <div id="cStatus">
+				<a id="cbutton" class="btn btn-info" href="javascript:checkStatus();">Check Status</a>
+		  </div>
+	 </div>
+</body>
+</html>

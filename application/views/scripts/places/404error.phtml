@@ -1,0 +1,73 @@
+
+<?php
+$requestURI = $this->requestURI;
+$host = App_Config::getHost();
+header('HTTP/1.0 404 Not Found');
+?>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>GAP: 404 Error</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="/css/template_style.css" />
+      
+    </head>
+    
+<body>
+
+<div id="menu-top">
+	<ul>
+		<li><a href="http://googleancientplaces.wordpress.com/about/" title="About GAP"><span>About</span></a></li>
+		<li><a href="http://googleancientplaces.wordpress.com/the-team/" title="Project Team"><span>Team</span></a></li>
+		<li><a href="http://googleancientplaces.wordpress.com/" title="Project Weblog"><span>Blog</span></a></li>
+		<li><a href="http://www.open.ac.uk/Arts/hestia/index.html" title="Geography and the Histories"><span>HESTIA</span></a></li>
+		<li><a href="http://opencontext.org" title="Open Context: Archaeological Data Publishing"><span>Open Context</span></a></li>
+	</ul>
+</div><!--menu-top-->
+
+<!-- mejobloggs: sorry about all these wrappers. It is a lot of structural markup .
+		If you know how to do this with less structural markup, contact my throught my
+		OWD user page: http://www.openwebdesign.org/userinfo.phtml?user=mejobloggs -->
+<div id="wrapper-header">
+<div id="header">
+	<!-- be sure to cite banner photo, from Flickr http://www.flickr.com/photos/rpastrana/3556526766/sizes/o/in/photostream/ -->
+<div id="wrapper-header2">
+<div id="wrapper-header3">
+	<div id="headerText">
+		<h1>Google Ancient Places</h1>
+	</div>
+</div><!--wrapper-header3-->
+</div><!--wrapper-header2-->
+</div><!--header-->
+</div><!--wrapper-header-->
+
+<div id="wrapper-content">
+    
+	<div id="content">
+	    <h1>Resource Not Found (404 Error)</h1>
+                
+                <div style="margin:10px;">
+                    <p>We looked and we looked, but we cannot find the resource you requested at:
+                    </p>
+                    <p style="font-size:125%; font-family:'Courier New', Monospace;"><?php echo $host.$requestURI; ?></p>
+		    
+		    <div style="margin-left: auto; margin-right: auto; ">
+			<img src="http://static.alexandriaarchive.org/images/general/404error.jpg" title="A little humor for a sad subject" alt="Sad 404 graphic" />
+			<p class="bodyText">Image Source: <a href="http://www.flickr.com/photos/guspim/2280690094/" title="Flickr Link">Gustavo</a> via Flickr (Creative Commons Share-a-like License)</p>
+		    </div>
+		    
+		    <p>Please check to make sure you have the correct request.
+		    </p>
+                </div>
+            </div>
+            
+        </div><!--content-->
+</div><!--wrapper-content-->
+
+<div id="wrapper-footer">
+	<div id="footer"><a href="http://googleancientplaces.wordpress.com/">GAP project news and blog</a></div>
+</div><!--wrapper-footer-->
+
+</body>
+</html>

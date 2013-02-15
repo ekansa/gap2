@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Geoparse</title>
+	 <link href="../css/bootstrap.css" rel="stylesheet" type="text/css" />
+	 <link href="../css/bootstrap-responsive.css" rel="stylesheet" type="text/css" />
+	 <link href="../css/gap.css" rel="stylesheet" type="text/css" />
+	 
+	 <script type="text/javascript" src="../js/gap/prototype-1.6.0.3.js" /> </script>
+    <script type="text/javascript" src="../js/gap/json2.js"> </script>
+    <script type="text/javascript" src="../js/gap/ajax_funcs.js" /> </script>
+	 <script type="text/javascript">
+		  
+		  var docList = "docList";
+		  var lastDocID = 0;
+		  
+		  function addDoc(){
+				
+				var docListDiv = document.getElementById(docList);
+				var docItems = docListDiv.getElementsByTagName("div");
+				var newDocIndex = docItems.length;
+				
+				newDocIndex = lastDocID + 1;
+				lastDocID = newDocIndex;
+				
+				var newDocGroupID = 'g-doc-' + newDocIndex;
+				var newLabID = 'l-doc-' + newDocIndex;
+				var newDocDivID = 'doc-' + newDocIndex;
+				var newDocURLid = 'd-url-' + newDocIndex;
+				var newDocNameID = 'd-name-' + newDocIndex;
+				
+				
+				var newDocGDiv = document.createElement('div');
+				newDocGDiv.setAttribute('id', newDocGroupID);
+				newDocGDiv.setAttribute('class', "control-group doc-g");
+				docListDiv.appendChild(newDocGDiv);
+				
+				var newLabLab = document.createElement('label');
+				newLabLab.setAttribute('id', newDocDivID);
+				newLabLab.setAttribute('class', "control-label");
+				newLabLab.setAttribute('for', newDocURLid);
+				newLabLab.innerHTML = "Geoparse this text";
+				newDocGDiv.appendChild(newLabLab);
+				
+				var newDocDiv = document.createElement('div');
+				newDocDiv.setAttribute('id', newDocDivID);
+				newDocDiv.setAttribute('class', "controls");
+				
+				var inputHTML = "<input id=\"" + newDocURLid + "\" name=\"docURL[]\" type=\"text\" placeholder=\"URL for the document...\" />";
+				inputHTML += "<input id=\"" + newDocNameID + "\" name=\"docTitle[]\" type=\"text\" placeholder=\"Name for the document...\" />";
+				inputHTML += "<a class=\"btn btn-info\" title=\"Add another document\" href=\"javascript:addDoc();\" >+</a>";
+				inputHTML += "<a class=\"btn btn-danger rem-doc\" title=\"Remove this document\" href=\"javascript:remDoc(" + newDocIndex + ");\" >-</a>";
+				
+				newDocDiv.innerHTML = inputHTML;
+				newDocGDiv.appendChild(newDocDiv);
+		  }
+		  
+		  function remDoc(remDocIndex){
+				var remDocGID = 'g-doc-' + remDocIndex;
+				var remLabID = 'l-doc-' + remDocIndex;
+				var remDocDivID = 'doc-' + remDocIndex;
+				
+				var remLab = document.getElementById(remLabID);
+				if(remLab) {
+					 remLab.parentNode.removeChild(remLab);
+				}
+				
+				var remDiv = document.getElementById(remDocDivID);
+				if(remDiv) {
+					 remDiv.parentNode.removeChild(remDiv);
+				}
+				
+				var remDivG = document.getElementById(remDocGID);
+				if(remDivG) {
+					 remDivG.parentNode.removeChild(remDivG);
+				}
+		  }
+		  
+		  
+		  
+	 </script>
+</head>
+
+<body>
+	 <div id="main">
+		  <h1>Geoparse a Text</h1>
+		  <form action="../edina/create-batch" method="POST" class="form-horizontal">
+				<legend>Identify place references</legend>
+				<p>The geoparser identifies places in batches of one or more documents. Complete this form
+				to describe a batch of documents to analyze:</p>
+				<div class="control-group">
+					 <label class="control-label" for="batchTitle">Batch Title</label>
+					 <div class="controls">
+						  <input id="batchTitle" name="batchTitle" type="text" placeholder="Title for the Batch">
+					 </div>
+				</div>
+				<div class="control-group">
+					 <label class="control-label" for="batchNote">Note about this Batch</label>
+					 <div class="controls">
+						  <textarea id="batchNote" name="batchNote" rows="4" placeholder="Note..."></textarea>
+					 </div>
+				</div>
+				<div id="docList">
+					 <div class="control-group doc-g" id="g-doc-0">
+						  <label class="control-label" for="d-url-0" id="l-doc-0">Geoparse this text</label>
+						  <div class="controls" id="doc-0">
+								<input id="d-url-0" name="docURL[]" type="text" placeholder="URL for the document..." />
+								<input id="d-name-0" name="docTitle[]" type="text" placeholder="Name for the document..." />
+								<a class="btn btn-info add-doc" title="Add another document" href="javascript:addDoc();" >+</a>
+						  </div>
+					 </div>
+				</div>
+				<button type="submit" class="btn">Submit</button>
+		  </form>
+		  <div id="results">
+		  </div>
+	 </div>
+</body>
+</html>

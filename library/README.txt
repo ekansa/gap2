@@ -1,0 +1,1 @@
+In this directory, install the Zend Framework (up to version 1.9). It should be in a directory called "Zend"

@@ -21,6 +21,8 @@ Configuration
 Edit the "/application/config_ini" file, add your local database info (name, username, password) and also
 add user acount / password information for the Unlock/Edina geoparser. Save the file as "config.ini"
 
+Also, the file "database-schema.txt" has a series of SQL queries needed to create the tables for the database.
+
 
 Additional Libraries / Code / Frameorks
 ---------------------------------------

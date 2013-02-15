@@ -1,0 +1,33 @@
+#main {
+    margin-top:5%;
+    width: 90%;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+#batch-tab {
+    width:45%;
+    margin-bottom: 10%;
+}
+
+#batch-tab {
+    width:45%;
+    margin-bottom: 10%;
+}
+
+#batch-docs {
+    width:55%;
+    margin-bottom: 10%;
+}
+#docList{
+    width: 55%;
+}
+div.doc-g {
+    width: 100%;
+}
+a.add-doc {
+    margin: 2px;
+}
+a.rem-doc {
+    margin: 2px;
+}

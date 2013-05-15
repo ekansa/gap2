@@ -8,6 +8,38 @@ ini_set("max_execution_time", "0");
 class EdinaController extends Zend_Controller_Action
 {
    
+	//deletes a batch
+	function deleteBatchAction(){
+		$this->_helper->viewRenderer->setNoRender();
+		
+		Zend_Loader::loadClass('Batch');
+		Zend_Loader::loadClass('Document');
+		Zend_Loader::loadClass('Geoparser_Edina');
+		Zend_Loader::loadClass('Geoparser_EdinaBatch');
+		
+		if(isset($_REQUEST["batchID"])){
+			$batchID = $_REQUEST["batchID"];
+			$batch = $batchObj->getByID($batchID);
+		}
+		elseif(isset($_REQUEST["parserID"])){
+			$parserID = $_REQUEST["parserID"];
+			$batch = $batchObj->getByParserID($parserID);
+			$batchID = $batchObj->id;
+		}
+		if(!$batch){
+			throw new Zend_Controller_Action_Exception('Cannnot find this page: '.$this->_request->getRequestUri(), 404);
+		}
+		else{
+			$edinaObj = New Geoparser_EdinaBatch;
+			$edinaObj->prepSettings();
+			$edinaObj->batchName = $parserID; //name / parser ID of the batch
+			$edinaObj->deleteBatch();
+			$batch = $batchObj->getByID($batchID);
+		}
+	
+		header('Content-Type: application/json; charset=utf8');
+		echo Zend_Json::encode($batch);
+	}
 	
    function createBatchAction(){
 		$this->_helper->viewRenderer->setNoRender();
@@ -91,8 +123,10 @@ class EdinaController extends Zend_Controller_Action
 		}
 		
 		if(!$batch){
-			$this->view->requestURI = $this->_request->getRequestUri(); 
-			return $this->render('404error');
+			//$this->view->requestURI = $this->_request->getRequestUri(); 
+			//return $this->render('404error');
+			throw new Zend_Controller_Action_Exception('Cannnot find this page: '.$this->_request->getRequestUri(), 404);
+
 		}
 		
 		$edinaObj = New Geoparser_EdinaBatch;
@@ -177,14 +211,15 @@ class EdinaController extends Zend_Controller_Action
 		$outputHeader = 'Content-Type: application/json; charset=utf8';
 		if(isset($_GET["format"])){
 			$format = $_GET["format"];
-			if($format == "xml"){
+			if($format == "xml" || $format == "kml"){
 				$outputHeader = 'Content-Type: application/xml; charset=utf8';
 			}
 		}
 		
 		if(!$doc){
-			$this->view->requestURI = $this->_request->getRequestUri(); 
-			return $this->render('404error');
+			//$this->view->requestURI = $this->_request->getRequestUri(); 
+			//return $this->render('404error');
+			throw new Zend_Controller_Action_Exception('Cannnot find this page: '.$this->_request->getRequestUri(), 404);
 		}
 		else{
 			$doc["result"] = false; //default to no result found
@@ -203,8 +238,8 @@ class EdinaController extends Zend_Controller_Action
 				$requestFile = $docObj->parserID.$type.".".$format; //this is the file type to get
 				$requestLink = false;
 				foreach($docObj->pLinks as $pLink){
-					if(strstr($pLink, $requestFile)){
-						$requestLink = $pLink; //yeah! we found the same format, and lemnatization status, so use this link
+					if(strstr($pLink["edina-href"], $requestFile)){
+						$requestLink = $pLink["edina-href"]; //yeah! we found the same format, and lemnatization status, so use this link
 						break;
 					}
 				}
@@ -218,6 +253,9 @@ class EdinaController extends Zend_Controller_Action
 					else{
 						$output = $respBody;
 					}
+				}
+				else{
+					throw new Zend_Controller_Action_Exception('Cannot complete request'.$respBody, 500);
 				}
 			}
 			
@@ -242,7 +280,7 @@ class EdinaController extends Zend_Controller_Action
 		Zend_Loader::loadClass('Tokens');
 		Zend_Loader::loadClass('GazetteerRefs');
 		
-		$docID = $_GET["docID"];
+		$docID = $_REQUEST["docID"];
 		$parseObj = New Geoparser_EdinaParse;
 		$xmlString = $parseObj->getLemnatizedXMLbyID($docID);
 		$tokenIDs = $parseObj->storeParsedTokens($xmlString);
@@ -258,6 +296,10 @@ class EdinaController extends Zend_Controller_Action
 		header('Content-Type: application/json; charset=utf8');
 		echo Zend_Json::encode($output);
 	}
+	
+	
+	
+	
 	
 	
    

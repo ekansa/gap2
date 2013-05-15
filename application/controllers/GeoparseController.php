@@ -22,8 +22,7 @@ class GeoparseController extends Zend_Controller_Action
 		$batchObj = New Batch;
 		$batch = $batchObj->getByID($batchID);
 		if(!$batch){
-			$this->view->requestURI = $this->_request->getRequestUri(); 
-			return $this->render('404error');
+			throw new Zend_Controller_Action_Exception('Cannnot find this page: '.$this->_request->getRequestUri(), 404);
 		}
 		else{
 			$this->view->batchObj = $batchObj;
@@ -39,8 +38,7 @@ class GeoparseController extends Zend_Controller_Action
 		$batchObj = New Batch;
 		$batch = $batchObj->getByID($batchID);
 		if(!$batch){
-			$this->view->requestURI = $this->_request->getRequestUri(); 
-			return $this->render('404error');
+			throw new Zend_Controller_Action_Exception('Cannnot find this page: '.$this->_request->getRequestUri(), 404);
 		}
 		
 		$batch["documents"] = $batchObj->documents;
@@ -48,6 +46,32 @@ class GeoparseController extends Zend_Controller_Action
 		echo Zend_Json::encode($batch);
 	}
    
+	//review a document's parsed geospatial data
+	function docReviewAction(){
+		
+		Zend_Loader::loadClass('Batch');
+		Zend_Loader::loadClass('Document');
+		$docObj = New Document;
+		$doc = false;
+		if(isset($_GET["docID"])){
+			$docID = $_GET["docID"];
+			$doc = $docObj->getByID($docID);
+			$parserID = $docObj->parserID;
+		}
+		elseif(isset($_GET["parserID"])){
+			$parserID = $_GET["parserID"];
+			$doc = $docObj->getByParserID($parserID);
+			$docID = $doc->id;
+		}
+		
+		if(!$doc){
+			throw new Zend_Controller_Action_Exception('Cannnot find this page: '.$this->_request->getRequestUri(), 404);
+		}
+		else{
+			$this->view->docObj = $docObj;
+		}
+		
+	}
    
    
 }

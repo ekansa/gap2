@@ -161,6 +161,25 @@ function createBatch(){
     return $response;
 }
 
+/*
+Delete a batch
+*/
+function deleteBatch(){
+    
+    $userBatchURI = $this->APIuri."/users/".$this->user."/batchjobs/".urlencode($this->batchName);
+    
+    $client = new Zend_Http_Client($userBatchURI,
+											  array(
+														  'maxredirects' => 0,
+														  'timeout'      => self::HTTPtimeout));
+   // $client->setHeaders('Host', $this->requestHost);
+    $client->setHeaders('Accept', 'application/json');
+    $client->setHeaders('AUTHORIZATION', $this->password);
+    
+    $response = $client->request("DELETE"); //send request using POST method
+    return $response;
+}
+
 
 
 

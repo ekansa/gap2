@@ -18,10 +18,6 @@ class ErrorController extends Zend_Controller_Action
                 // Application (500) error
                 $this->render('500');
                 break;
-                
-            
         }
-        
-        
     }
 }

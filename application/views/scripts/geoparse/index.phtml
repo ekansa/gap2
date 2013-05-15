@@ -49,8 +49,28 @@
 				
 				var inputHTML = "<input id=\"" + newDocURLid + "\" name=\"docURL[]\" type=\"text\" placeholder=\"URL for the document...\" />";
 				inputHTML += "<input id=\"" + newDocNameID + "\" name=\"docTitle[]\" type=\"text\" placeholder=\"Name for the document...\" />";
-				inputHTML += "<a class=\"btn btn-info\" title=\"Add another document\" href=\"javascript:addDoc();\" >+</a>";
+				
+				inputHTML += "<div class=\"trow\">";
+				inputHTML += "<div class=\"tcell\">";
+				inputHTML += "<label class=\"radio\">";
+				inputHTML += "<input name=\"docGaz[]\" type=\"radio\" value=\"plplus\" checked />";
+				inputHTML += "Use Pleiades+ Gazetteer";
+				inputHTML += "</label>";
+				inputHTML += "<label class=\"radio\">";
+				inputHTML += "<input name=\"docGaz[]\" type=\"radio\" value=\"geonames\" />";
+				inputHTML += "Use Geonames Gazetteer";
+				inputHTML += "</label>";
+				inputHTML += "</div>";
+				inputHTML += "<div class=\"tcell\">";
+				inputHTML += "(Add another)";
+				inputHTML += "<a class=\"btn btn-info add-doc\" title=\"Add another document\" href=\"javascript:addDoc();\" >+</a>";
+				inputHTML += "</div>"
+				inputHTML += "<div class=\"tcell\">";
+				inputHTML += "(Remove)";
 				inputHTML += "<a class=\"btn btn-danger rem-doc\" title=\"Remove this document\" href=\"javascript:remDoc(" + newDocIndex + ");\" >-</a>";
+				inputHTML += "</div>"
+				inputHTML += "</div>"
+				//inputHTML += "</div>"
 				
 				newDocDiv.innerHTML = inputHTML;
 				newDocGDiv.appendChild(newDocDiv);
@@ -58,24 +78,24 @@
 		  
 		  function remDoc(remDocIndex){
 				var remDocGID = 'g-doc-' + remDocIndex;
-				var remLabID = 'l-doc-' + remDocIndex;
-				var remDocDivID = 'doc-' + remDocIndex;
-				
-				var remLab = document.getElementById(remLabID);
-				if(remLab) {
-					 remLab.parentNode.removeChild(remLab);
-				}
-				
-				var remDiv = document.getElementById(remDocDivID);
-				if(remDiv) {
-					 remDiv.parentNode.removeChild(remDiv);
-				}
-				
 				var remDivG = document.getElementById(remDocGID);
-				if(remDivG) {
-					 remDivG.parentNode.removeChild(remDivG);
+				removeTags(remDivG);
+		  }
+		  
+		  //deletes nodes
+		  function removeTags(node){
+				for (var i = node.childNodes.length - 1; i >= 0; i--) {
+					 var childNode = node.childNodes[i];
+		  
+					 if (childNode.nodeType == 1) {
+						  node.removeChild(childNode);
+						  continue;
+					 } 
+		  
+					 removeTags(childNode);
 				}
 		  }
+		  
 		  
 		  
 		  
@@ -107,7 +127,31 @@
 						  <div class="controls" id="doc-0">
 								<input id="d-url-0" name="docURL[]" type="text" placeholder="URL for the document..." />
 								<input id="d-name-0" name="docTitle[]" type="text" placeholder="Name for the document..." />
-								<a class="btn btn-info add-doc" title="Add another document" href="javascript:addDoc();" >+</a>
+								
+								<div class="trow">
+									 <div class="tcell" >
+										  <label class="radio">
+												<input  name="docGaz[]" type="radio" value="plplus" checked />
+												Use Pleiades+ Gazetteer
+										  </label>
+										  <label class="radio">
+												<input  name="docGaz[]" type="radio" value="geonames" />
+												Use Geonames Gazetteer
+										  </label>
+									 </div>
+									 <div class="tcell" >
+										  (Add another)
+										  <a class="btn btn-info add-doc" title="Add another document" href="javascript:addDoc();" >+</a>
+									 </div>
+									 <div class="tcell">
+										  
+									 </div>
+								</div>
+								
+								
+								<!--
+								<a class="btn btn-info add-doc" title="Add another document" href="javascript:addDoc();" >+</a> (Add another)
+								-->
 						  </div>
 					 </div>
 				</div>

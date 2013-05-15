@@ -1,0 +1,120 @@
+<?php
+	 $docObj = $this->docObj;
+?>
+<!DOCTYPE html>
+
+<html>
+<head>
+    <title>Geoparsed Document: <?php echo $docObj->title; ?></title>
+	 <link href="../../css/bootstrap.css" rel="stylesheet" type="text/css" />
+	 <link href="../../css/bootstrap-responsive.css" rel="stylesheet" type="text/css" />
+	 <link href="../../css/gap.css" rel="stylesheet" type="text/css" />
+	 
+	 <script type="text/javascript" src="../../js/gap/prototype-1.6.0.3.js" /> </script>
+    <script type="text/javascript" src="../../js/gap/json2.js"> </script>
+    <script type="text/javascript" src="../../js/gap/ajax_funcs.js" /> </script>
+	 
+	 <script type="text/javascript" >
+	 
+		  var docID = <?php echo $docObj->id; ?>;
+	 
+		  function saveData(){
+				var cStatus = document.getElementById("cStatus");
+				cStatus.innerHTML = "...saving data now...";
+				
+				var saveURI = "../../edina/store-data";
+				var myAjax = new Ajax.Request(saveURI,
+					 {method: 'post',
+					 parameters:
+					 {
+						  docID: docID
+					 },
+					 onComplete: saveDataDone }
+				);
+		  }
+	 
+		  function saveDataDone(response){
+				var cStatus = document.getElementById("cStatus");
+				cStatus.innerHTML = "Data saved! <a href='../../gapvis/index.html#book/" + docID + "'>Review saved data</a>";
+		  }
+	 
+	 
+	 </script>
+	 
+</head>
+
+<body>
+	 <div id="main">
+		  <h1>Geoparsed Document</h1>
+		  <table class="table table-striped" id="batch-tab">
+				<tr>
+					 <th>Title</th><td><?php echo $docObj->title; ?></td>
+				</tr>
+				<tr>
+					 <th>Status</th><td><?php echo $docObj->status; ?></td>
+				</tr>
+				<tr>
+					 <th>Created</th><td><?php echo $docObj->created; ?></td>
+				</tr>
+				<tr>
+					 <th>Updated</th><td><?php echo $docObj->updated; ?></td>
+				</tr>
+				<tr>
+					 <th>Original URL</th><td><a href="<?php echo $docObj->url; ?>"><?php echo $docObj->url; ?></a></td>
+				</tr>
+				<tr>
+					 <th>Geoparsing Batch</th><td><a href="<?php echo App_Config::getHost()."/geoparse/batch/".$docObj->batchID; ?>">Batch: <?php echo $docObj->batchID; ?></a></td>
+				</tr>
+		  </table>
+		  <h3>Documents in this Batch</h3>
+		  
+		  <?php
+		  
+		  if(is_array($docObj->pLinks)){
+				
+		  ?>
+		  <table class="table table-condensed table-bordered" id="batch-docs">
+				<thead>
+					 <tr>
+						  <th>Result Format</th>
+						  <th>Edina URL</th>
+						  <th>View</th>
+					 </tr>
+				</thead>
+				<tbody>
+					 <?php
+					 foreach($docObj->pLinks as $link){
+					 ?>
+					 <tr>
+						  <td>
+						  <?php
+						  
+						  echo $link["type"]." (".$link["format"].")";
+						  
+						  ?>
+						  </td>
+						  <td><?php echo $link["edina-href"]; ?></td>
+						  <td>
+								<a href="<?php echo $link["local-href"]; ?>" title="View this document" target="_blank">
+								View this result format
+								</a>
+						  </td>
+						  
+					 </tr>	
+					 <?php  
+					 }//end loop
+					 ?>
+				</tbody>
+		  </table>
+		  <?php
+		  
+		  }//end case with an array of result links
+		  
+		  ?>
+		  
+		  <div id="cStatus">
+				<a id="cbutton" class="btn btn-info" href="javascript:saveData();">Save Geoparse Data</a>
+		  </div>
+	 </div>
+</body>
+</html>

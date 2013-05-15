@@ -81,7 +81,16 @@
 								<?php echo $row["url"]; ?>
 								</a>
 						  </td>
-						  <td id="doc-status-<?php echo $row["id"]; ?>"><?php echo $row["status"]; ?></td>
+						  <td id="doc-status-<?php echo $row["id"]; ?>">
+						  <?php
+						  
+								echo $row["status"];
+								if(stristr($row["status"], "complete")){
+									 echo "<br/><a href='".$row["doc-rev-href"]."'>Review geoparsed places</a>";
+								}
+						  
+						  ?>
+						  </td>
 					 </tr>	
 					 <?php  
 					 }//end loop

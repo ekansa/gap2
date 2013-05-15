@@ -21,6 +21,8 @@ class Document {
 	 public $pLinks;
 	 
 	 
+	 const docResultLinkSuffix = "/edina/doc-review?docID=";
+	 
 	 //get the data by ID, formated for GapVis
 	 function getGapVisDataByID($id){
 		  $output = false;
@@ -68,6 +70,7 @@ class Document {
 		  return $db;
 	 }
 	 
+	 //get the document by the ID assigned by the local application
 	 function getByID($id){
 		  $db = $this->initialize();
 		  $id = App_Security::inputCheck($id);
@@ -85,6 +88,7 @@ class Document {
 				if(strlen($result[0]["pLinks"])>4){
 					 $result[0]["pLinks"] = Zend_Json::decode($result[0]["pLinks"]);
 					 $this->pLinks = $result[0]["pLinks"];
+					 $this->makeResultGetLink();
 				}
 				else{
 					 $this->pLinks = false;
@@ -97,7 +101,52 @@ class Document {
 		  
 	 }
 	 
+	 //create links for reviewing result data (since can't directly download without HTTP authentication)
+	 function makeResultGetLink(){
+		  
+		  if(is_array($this->pLinks)){
+				$newPlinks = array();
+				foreach($this->pLinks as $link){
+				
+					 $actLink = array();
+					 $linkEx = explode(".", $link); //exlode a link to get the file type
+					 $lastExtension = $linkEx[(count($linkEx)-1)];
+					 $formatParam = "";
+					 $actLink["format"] = "JSON";
+					 if($lastExtension == "json"){
+						  $formatParam = "&format=json";
+						  $actLink["format"] = "JSON";
+					 }
+					 elseif($lastExtension == "xml"){
+						  $formatParam = "&format=xml";
+						  $actLink["format"] = "XML";
+					 }
+					 elseif($lastExtension == "kml"){
+						  $formatParam = "&format=kml";
+						  $actLink["format"] = "KML";
+					 }
+					 $typeParam = "";
+					 $actLink["type"] = "summary";
+					 if(isset($linkEx[(count($linkEx)-2)])){
+						  if($linkEx[(count($linkEx)-2)] == "lem"){
+								$typeParam = "&type=lem";
+								$actLink["type"] = "full text";
+						  }
+					 }
+
+					 $actLink["local-href"] = App_Config::getHost().self::docResultLinkSuffix.$this->id.$formatParam.$typeParam;
+					 $actLink["edina-href"] = $link;
+					 $newPlinks[] = $actLink;
+				}
+				$this->pLinks = $newPlinks;
+		  }
+		  
+	 }
 	 
+	 
+	 
+	 
+	 //get the document by the ID assigned by the GeoParser
 	 function getByParserID($parserID){
 		  $db = $this->initialize();
 		  $parserID = App_Security::inputCheck($parserID);
@@ -115,6 +164,7 @@ class Document {
 				if(strlen($result[0]["pLinks"])>4){
 					 $result[0]["pLinks"] = Zend_Json::decode($result[0]["pLinks"]);
 					 $this->pLinks = $result[0]["pLinks"];
+					 $this->makeResultGetLink();
 				}
 				return $result[0];
 		  }

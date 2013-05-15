@@ -304,8 +304,8 @@ class Geoparser_EdinaParse {
 				$requestFile = $docObj->parserID.".xml"; //this is the file type to get
 				$requestLink = false;
 				foreach($docObj->pLinks as $pLink){
-					 if(strstr($pLink, $requestFile)){
-						 $requestLink = $pLink; //yeah! we found the same format, and lemnatization status, so use this link
+					 if(strstr($pLink["edina-href"], $requestFile)){
+						 $requestLink = $pLink["edina-href"]; //yeah! we found the same format, and lemnatization status, so use this link
 						 break;
 					 }
 				}
@@ -343,8 +343,8 @@ class Geoparser_EdinaParse {
 				$requestFile = $docObj->parserID.".lem.xml"; //this is the file type to get
 				$requestLink = false;
 				foreach($docObj->pLinks as $pLink){
-					if(strstr($pLink, $requestFile)){
-						$requestLink = $pLink; //yeah! we found the same format, and lemnatization status, so use this link
+					if(strstr($pLink["edina-href"], $requestFile)){
+						$requestLink = $pLink["edina-href"]; //yeah! we found the same format, and lemnatization status, so use this link
 						break;
 					}
 				}

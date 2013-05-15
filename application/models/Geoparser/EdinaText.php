@@ -24,7 +24,7 @@ public $cacheUsed; //boolean, was the cache used to get the response?
 private $APIuri; //base uri API
 private $requestHost; //requester Host
 
-const HTTPtimeout = 45; //allow 45 seconds before timeout of HTTP request
+const HTTPtimeout = 240; //allow 240 seconds before timeout of HTTP request
 const resultCacheLife = 720000; // cache lifetime, measured in seconds, 7200 = 2 hours
 const resultCache = "./result_cache/"; // Directory where to put the cache files;
 
@@ -64,7 +64,7 @@ function getText(){
     $client->setHeaders('AUTHORIZATION', $this->password);
     //$client->setHeaders('User-Key', $this->userKey);
     
-    $response = $client->request("GET");
+    @$response = $client->request("GET");
     return $response;
 }
 
@@ -87,6 +87,46 @@ function getResult(){
 		  'maxredirects' => 1,
 		  'timeout'      => self::HTTPtimeout));
 	 
+	 
+    //$client->setHeaders('Host', $this->requestHost);
+	 if($this->resultFormat == "xml"){
+		  $client->setHeaders('Accept', 'application/json');
+	 }
+	 else{
+		  $client->setHeaders('Accept', 'application/json');
+	 }
+    //$client->setHeaders('Accept', 'application/json');
+    $client->setHeaders('AUTHORIZATION', $this->password);
+    //$client->setHeaders('User-Key', $this->userKey);
+    
+    @$response = $client->request("GET");
+    return $response;
+    
+}
+
+function getResultStream(){
+    
+    if(!$this->resourceURI){
+		  $requestURI = $this->APIuri."/users/".$this->user."/batchjobs/".urlencode($this->batchName)."/".$this->resourceID.".".$this->resultFormat;
+		  //$requestURI = $this->APIuri."/users/".$this->user."/batchjobs/".$this->batchName;
+		  $this->resourceURI = $requestURI;
+    }
+    else{
+		  $requestURI = $this->resourceURI;
+    }
+    
+	 $uriExplode = explode("/", $this->resourceURI);
+	 $fileName = $uriExplode[(count($uriExplode) -1)];
+	 $tempID = preg_replace('/[^a-z0-9]/i', '_', $fileName);
+	 $tempID_a = $tempID."-temp-a";
+	 $tempID_b = $tempID."-temp-b";
+	 
+    $client = new Zend_Http_Client($requestURI, array(
+		  'maxredirects' => 1,
+		  'timeout'      => self::HTTPtimeout));
+	 
+	 $client->setStream();
+	 
     //$client->setHeaders('Host', $this->requestHost);
 	 if($this->resultFormat == "xml"){
 		  $client->setHeaders('Accept', 'application/json');
@@ -99,11 +139,14 @@ function getResult(){
     //$client->setHeaders('User-Key', $this->userKey);
     
     $response = $client->request("GET");
+	 copy($response->getStreamName(), self::resultCache."/".$tempID_a);
+	 $fp = fopen( self::resultCache."/".$tempID_b, "w");
+	 stream_copy_to_stream($response->getStream(), $fp);
+	 $client->setStream(self::resultCache."/".$tempID_a)->request('GET');
+	 
     return $response;
     
 }
-
-
 
 function cacheGetResult(){
 

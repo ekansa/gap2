@@ -20,6 +20,9 @@ class Batch {
 	 
 	 public $documents; //array of documents belonging to a batch;
 	 
+	 const docLinkSuffix = "/geoparse/doc-review?docID=";
+	 
+	 
 	 function initialize(){
 		  $db = $this->startDB();
 		  $this->initializeTab(); //create the database table if it doesn't exist
@@ -84,6 +87,7 @@ class Batch {
 				$allDone = true;
 				foreach($result as $row){
 					 $actOut = $row;
+					 $actOut["doc-rev-href"] = App_Config::getHost().self::docLinkSuffix.$row["id"];
 					 if(strlen($row["pLinks"])>4){
 						  $actOut["pLinks"] = Zend_Json::decode($row["pLinks"]);	  
 					 }
@@ -168,6 +172,7 @@ class Batch {
  
 	 //generate an id for geoparser batch
 	 function makeParserID($id, $prefix="batch-"){
+		  $prefix .= chr(rand(97,122))."-";
 		  return $prefix.$id."-";
 	 }
 	 

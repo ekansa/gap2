@@ -32,6 +32,11 @@ Zend_Registry::set('db', $db);
 // setup controller
 $frontController = Zend_Controller_Front::getInstance();
 $frontController->throwExceptions(true);
+$frontController->registerPlugin(new Zend_Controller_Plugin_ErrorHandler(array(
+    'module'     => 'error',
+    'controller' => 'error',
+    'action'     => 'error'
+)));
 
 // Custom routes
 $router = $frontController->getRouter();

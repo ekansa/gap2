@@ -31,3 +31,12 @@ a.add-doc {
 a.rem-doc {
     margin: 2px;
 }
+
+div.trow {
+    display: table-row;
+}
+div.tcell {
+    display: table-cell;
+    vertical-align: middle;
+    padding:2%;
+}

@@ -18,7 +18,7 @@ class GazetteerRefs {
 	 
 	 //get a page summary to format in JSON for GapVis
 	 function getGapVisPageSummaryByDocID($docID){
-		  
+		 
 		  $sentencesPerPage = $this->sentencesPerPage();
 		  $db = $this->startDB();
 		  $sql = "SELECT gt.pageID, grefs.id, gt.sentID, grefs.uriID, gazuris.uri
@@ -26,6 +26,7 @@ class GazetteerRefs {
 					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
 					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
 					 WHERE grefs.docID = $docID
+					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
 					 ORDER BY gt.pageID, grefs.tokenID
 					 ";
 		  $result = $db->fetchAll($sql, 2);
@@ -56,13 +57,16 @@ class GazetteerRefs {
 	 
 	 //get a list of places identified in a document
 	 function getGapVisPlaceSummaryByDocID($docID){
+		  
 		  $db = $this->startDB();
 		  $sql = "SELECT grefs.id, grefs.docName,
-					 grefs.gazName, grefs.uriID, grefs.latitude, grefs.longitude, gazuris.uri
+					 grefs.gazName, grefs.uriID, grefs.latitude AS pLat, grefs.longitude AS pLong, gazuris.uri, gazuris.label,
+					 gazuris.latitude, gazuris.longitude
 					 FROM gap_gazrefs AS grefs
 					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
 					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
 					 WHERE grefs.docID = $docID
+					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
 					 GROUP BY grefs.uriID
 					 ORDER BY grefs.tokenID
 				
@@ -77,7 +81,7 @@ class GazetteerRefs {
 					 else{
 						  $title = $row["gazName"];
 					 }
-					 
+					 $title = $row["label"];
 					 $actPlace = array("id" => $row["uriID"],
 											 "uri" => $row["uri"],
 											 "title" => $title,
@@ -132,7 +136,8 @@ class GazetteerRefs {
 		  $db = $this->startDB();
 		  
 		  $sql = "SELECT grefs.docName,
-					 grefs.gazName, grefs.uriID, grefs.latitude, grefs.longitude, gazuris.uri
+					 grefs.gazName, grefs.uriID, grefs.latitude AS pLat, grefs.longitude AS pLong, gazuris.uri, gazuris.label,
+					 gazuris.latitude, gazuris.longitude 
 		  FROM gap_gazuris AS gazuris
 		  JOIN gap_gazrefs AS grefs ON  gazuris.id = grefs.uriID
 		  WHERE gazuris.id = $IDgazURI
@@ -149,6 +154,7 @@ class GazetteerRefs {
 					 else{
 						  $title = $row["gazName"];
 					 }
+					 $title = $row["label"];
 					 $actPlace = array("id" => $row["uriID"],
 											 "uri" => $row["uri"],
 											 "title" => $title,
@@ -158,6 +164,43 @@ class GazetteerRefs {
 				}
 		  }
 		  return $actPlace;
+	 }
+	 
+	 
+	 //get pleaides Label data
+	 function updatePleiadesData(){
+		  $db = $this->startDB();
+		  
+		  $sql = "SELECT DISTINCT uri FROM gap_gazuris WHERE label = '' AND uri LIKE 'http://pleiades.stoa.org/%' ";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				foreach($result as $row){
+					 $update = false;
+					 $baseURI = $row["uri"];
+					 $jsonURI = $baseURI . "/json";
+					 $jsonURI = str_replace("//json", "/json", $jsonURI); //just in case of trailing slash
+					 sleep(.5);
+					 @$jsonStringData = file_get_contents($jsonURI);
+					 if($jsonStringData ){
+						  @$jsonData = Zend_Json::decode($jsonStringData);
+						  if(is_array($jsonData)){
+								if(isset($jsonData["title"])){
+									 $data = array("label" => $jsonData["title"]);
+									 $where = " uri = '$baseURI' ";
+									 $db->update("gap_gazuris", $data, $where);
+									 $update = true;
+								}
+						  }
+					 }
+					 if(!$update){
+						  $data = array("label" => "[Unknown place label]");
+						  $where = " uri = '$baseURI' ";
+						  $db->update("gap_gazuris", $data, $where);
+					 }
+					 
+				}
+		  }
+		  
 	 }
 	 
 	 
@@ -219,9 +262,13 @@ class GazetteerRefs {
 			 CREATE TABLE IF NOT EXISTS gap_gazuris (
 				id int(11) NOT NULL AUTO_INCREMENT,
 				uri varchar(200) NOT NULL,
+				label varchar(200) NOT NULL,
+				latitude double DEFAULT NULL,
+				longitude double DEFAULT NULL,
 				updated timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 				PRIMARY KEY (id),
-				UNIQUE KEY uri (uri)
+				UNIQUE KEY uri (uri),
+				KEY label (label)
 			 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;
 
 			 

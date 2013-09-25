@@ -12,20 +12,31 @@ class Tokens {
 	 function getGapVisDocPage($docID, $pageID){
 		  $output = false;
 		  $db = $this->startDB();
-		  $sql = "SELECT gt.token, gt.sentID, gt.pws, grefs.uriID
+		  $sql = "SELECT gt.token, gt.sentID, gt.pws, grefs.uriID, gt.paraID
 					 FROM gap_tokens AS gt
 					 LEFT JOIN gap_gazrefs AS grefs ON grefs.tokenID = gt.id
-					 WHERE gt.docID = $docID AND gt.pageID = $pageID ";
+					 WHERE gt.docID = $docID AND gt.pageID = $pageID
+					 ORDER BY gt.id
+					 ";
 		  
 		  $result = $db->fetchAll($sql, 2);
 		  if($result){
 				$output = "";
 				$firstToken = true;
+				$lastParaID = false;
+				$prevToken = false;
 				foreach($result as $row){
-					 
-					 $token =$row["token"];
+					 $paraID = $row["paraID"];
+					 $token = $row["token"];
 					 if(strlen($row["uriID"])>0){
 						  $token = "<span class=\"place\" data-place-id=\"".$row["uriID"]."\" >".$token."</span>";
+					 }
+					 
+					 if($lastParaID != $paraID){
+						  $lastParaID = $paraID;
+						  if($prevToken == "." || $prevToken == "!" || $prevToken == "?" || $prevToken == '”'){
+								$output .= "<br/><br/>";
+						  }
 					 }
 					 
 					 if(!$row["pws"] || $firstToken){
@@ -35,6 +46,7 @@ class Tokens {
 						  $output .= " ".$token;
 					 }
 					 
+					 $prevToken = $token;
 					 $firstToken = false;
 				}
 				$output = $this->GapVisTextDecoding($output);
@@ -46,12 +58,17 @@ class Tokens {
 	 
 	 function GapVisTextDecoding($string){
 		  $entities = array("&#39;" => "'");
+		  $puncts = array(".", ",", ":", ";", "?", "!", "' ", "'s ", '”');
 		  //$entities = array("&#39;" => " ");
 		  $string = htmlspecialchars_decode($string);
 		  $string = html_entity_decode($string);
 		  foreach($entities as $entKey => $value){
 				$string = str_replace($entKey, $value, $string);
 		  }
+		  foreach($puncts as $punct){
+				$string = str_replace(" ".$punct, $punct, $string);
+		  }
+		  
 		  return $string;
 	 }
 	 
@@ -107,6 +124,7 @@ class Tokens {
 				docID int(11) NOT NULL,
 				batchID int(11) NOT NULL,
 				pageID int(11) NOT NULL,
+				paraID int(11) NOT NULL,
 				sentID varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
 				tokenID varchar(50) CHARACTER SET latin1 COLLATE latin1_general_ci NOT NULL,
 				pws tinyint(1) NOT NULL,

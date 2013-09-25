@@ -33,6 +33,7 @@ class Document {
 		  if($result){
 				
 				$gazRefObs = new GazetteerRefs;
+				$gazRefObs->updatePleiadesData();
 				
 				$this->id = $id;
 				$this->parserID = $result[0]["parserID"];

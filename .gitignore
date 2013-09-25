@@ -1,5 +1,6 @@
 *.ini
 cache/
+export/
 result_cache/
 status_cache/
 Zend/

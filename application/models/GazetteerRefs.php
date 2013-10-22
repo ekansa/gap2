@@ -21,7 +21,62 @@ class GazetteerRefs {
 		 
 		  $sentencesPerPage = $this->sentencesPerPage();
 		  $db = $this->startDB();
-		  $sql = "SELECT gt.pageID, grefs.id, gt.sentID, grefs.uriID, gazuris.uri
+		  
+		  $sql = "SELECT DISTINCT gt.pageID
+					 FROM gap_tokens AS gt
+					 WHERE gt.docID = $docID
+					 ORDER BY gt.pageID
+					 ";
+					 
+		  
+		  $result = $db->fetchAll($sql, 2);
+		  $sentPages = array();
+		  $pagePlaces = array();
+		  if($result){
+				$previousPage = false;
+				foreach($result as $row){
+					 $currentPage = $row["pageID"];
+					 if($currentPage != $previousPage){
+						  if($previousPage != false){
+								$pagePlaces[] = $actPage;
+								unset($actPage);
+						  }
+						  $actPage = array("id" => $currentPage, "places" => array());
+						  $previousPage = $currentPage;
+					 }
+					 
+					 $sql = "SELECT gt.pageID, grefs.id, gt.sentID, grefs.uriID, 
+					 grefs.latitude AS pLat, grefs.longitude AS pLong, gazuris.uri, 
+					 gazuris.latitude, gazuris.longitude
+					 FROM gap_gazrefs AS grefs
+					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
+					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
+					 WHERE grefs.docID = $docID AND gt.pageID = $currentPage
+					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
+					 ORDER BY grefs.tokenID";
+					 
+					 $resultB = $db->fetchAll($sql, 2);
+					 if($resultB){
+						  foreach($resultB as $rowB){
+								$actPage["places"][] = $rowB["uriID"];
+						  }
+					 }
+				}
+				$pagePlaces[] = $actPage;
+		  }
+		  return $pagePlaces;
+	 }
+	 
+	 
+	 
+	 
+	 function OLDgetGapVisPageSummaryByDocID($docID){
+		 
+		  $sentencesPerPage = $this->sentencesPerPage();
+		  $db = $this->startDB();
+		  $sql = "SELECT gt.pageID, grefs.id, gt.sentID, grefs.uriID, 
+					 grefs.latitude AS pLat, grefs.longitude AS pLong, gazuris.uri, 
+					 gazuris.latitude, gazuris.longitude
 					 FROM gap_gazrefs AS grefs
 					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
 					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
@@ -29,6 +84,8 @@ class GazetteerRefs {
 					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
 					 ORDER BY gt.pageID, grefs.tokenID
 					 ";
+					 
+		  
 		  $result = $db->fetchAll($sql, 2);
 		  $sentPages = array();
 		  $pagePlaces = array();
@@ -46,9 +103,12 @@ class GazetteerRefs {
 					 }
 					 $actPage["places"][] = $row["uriID"];
 				}
-				if(count($actPage["places"])>0){
+				/*
+				if(count($actPage["places"])>=0){
 					 $pagePlaces[] = $actPage;
 				}
+				*/
+				$pagePlaces[] = $actPage;
 		  }
 		  return $pagePlaces;
 	 }
@@ -71,6 +131,20 @@ class GazetteerRefs {
 					 ORDER BY grefs.tokenID
 				
 					 ";
+					 
+				$sql = "SELECT grefs.id, grefs.docName,
+					 grefs.gazName, grefs.uriID, grefs.latitude AS pLat, grefs.longitude AS pLong, gazuris.uri, gazuris.label,
+					 gazuris.latitude, gazuris.longitude
+					 FROM gap_gazrefs AS grefs
+					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
+					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
+					 WHERE grefs.docID = $docID
+					
+					 GROUP BY grefs.uriID
+					 ORDER BY grefs.tokenID
+				
+					 ";
+					 
 		  $result = $db->fetchAll($sql, 2);
 		  $places = array();
 		  if($result){

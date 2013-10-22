@@ -9,13 +9,20 @@ class Tokens {
  
     public $db; //database connection object
     
-	 function getGapVisDocPage($docID, $pageID){
+	 function getGapVisDocPage($docID, $pageID, $paraID = false, $specificPlace = false){
 		  $output = false;
 		  $db = $this->startDB();
-		  $sql = "SELECT gt.token, gt.sentID, gt.pws, grefs.uriID, gt.paraID
+		  
+		  $paraTerm = " ";
+		  if($paraID != false){
+				$paraTerm = " AND gt.paraID = '$paraID ' ";
+		  }
+		  
+		  $sql = "SELECT gt.id, gt.token, gt.sentID, gt.pws, grefs.uriID, gt.paraID 
 					 FROM gap_tokens AS gt
 					 LEFT JOIN gap_gazrefs AS grefs ON grefs.tokenID = gt.id
 					 WHERE gt.docID = $docID AND gt.pageID = $pageID
+					 $paraTerm
 					 ORDER BY gt.id
 					 ";
 		  
@@ -25,12 +32,28 @@ class Tokens {
 				$firstToken = true;
 				$lastParaID = false;
 				$prevToken = false;
+				$issuesObj = new Issues;
 				foreach($result as $row){
 					 $paraID = $row["paraID"];
 					 $token = $row["token"];
+					 $tokenID = $row["id"];
 					 if(strlen($row["uriID"])>0){
-						  $token = "<span class=\"place\" data-place-id=\"".$row["uriID"]."\" >".$token."</span>";
+						  if(!$specificPlace){
+								$token = "<span data-token-id=\"".$tokenID."\" class=\"place\" data-place-id=\"".$row["uriID"]."\" >".$token."</span>";
+								/*
+								if($issuesObj->checkTokenIssues($tokenID)){
+									 $token .= "<sup><a href=\"../report/token-issues/".$tokenID."\" target=\"_blank\"  >[**]</a></sup>";
+								}
+								*/
+								if($issuesObj->checkPlaceIssues($row["uriID"])){
+									 $token .= "<sup><a href=\"../report/place-issues/".$row["uriID"]."\" target=\"_blank\" title=\"Problem reported on this place\" >[*]</a></sup>"; 
+								}
+						  }
+						  elseif($specificPlace == $tokenID){
+								$token = "<span id=\"t-".$tokenID."\" class=\"place\">".$token."</span>";
+						  }
 					 }
+					 
 					 
 					 if($lastParaID != $paraID){
 						  $lastParaID = $paraID;
@@ -53,6 +76,19 @@ class Tokens {
 		  }
 	 
 		  return $output;
+	 }
+	 
+	 //get token by ID
+	 function getTokenByID($tokenID){
+		  $db = $this->startDB();
+		  $sql = "SELECT * FROM gap_tokens WHERE id = $tokenID LIMIT 1; ";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				return $result[0];
+		  }
+		  else{
+				return false;
+		  }
 	 }
 	 
 	 
@@ -87,6 +123,23 @@ class Tokens {
 		  }
 	 }
 	 
+	 //check to see if the document is already in
+	 function getPlaceByTokensID($tokenID){
+		  $db = $this->startDB();
+		  $sql = "SELECT grefs.id AS gazRefID, grefs.uriID, gazuris.uri, gazuris.label, gazuris.latitude, gazuris.longitude
+					 FROM gap_gazrefs AS grefs
+					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
+					 WHERE grefs.tokenID = $tokenID
+					 LIMIT 1;
+					 ";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				return $result[0];
+		  }
+		  else{
+				return false;
+		  }
+	 }
 	 
 	 function addRecord($data){
 		  $db = $this->startDB();

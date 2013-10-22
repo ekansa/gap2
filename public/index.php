@@ -117,6 +117,32 @@ $router->addRoute('placeBookJSONroute', $placeBookJSONroute ); // A given book, 
 
 
 
+$tokenIssuesRoute = new Zend_Controller_Router_Route('report/token-issues/:tokenID', array('controller' => 'report', 'action' => 'token-issues'));
+// Add it to the router
+$router->addRoute('tokenIssuesRoute', $tokenIssuesRoute); // Issues on a token, HTML
+
+
+
+$tokenIssuesJSONroute = new Zend_Controller_Router_Route_Regex('report/token-issues/(.*)\.json',
+                                                        array('controller' => 'report', 'action' => 'tokenissuesjson'),
+                                                        array(1 => 'tokenID'), 'places/token-issues/%s/');
+// Add it to the router
+$router->addRoute('tokenIssuesJSONroute', $tokenIssuesJSONroute ); // Issues on a token, JSON format 
+
+
+$placeIssuesRoute = new Zend_Controller_Router_Route('report/place-issues/:uriID', array('controller' => 'report', 'action' => 'place-issues'));
+// Add it to the router
+$router->addRoute('placeIssuesRoute', $placeIssuesRoute ); // Issues on a place, HTML
+
+
+
+$placeIssuesJSONroute = new Zend_Controller_Router_Route_Regex('report/place-issues/(.*)\.json',
+                                                        array('controller' => 'report', 'action' => 'placeissuesjson'),
+                                                        array(1 => 'uriID'), 'places/place-issues/%s/');
+// Add it to the router
+$router->addRoute('placeIssuesJSONroute', $placeIssuesJSONroute ); // Issues on a token, JSON format 
+
+
 
 
 

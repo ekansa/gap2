@@ -94,6 +94,7 @@ class BooksController extends Zend_Controller_Action
 				$docID = $requestParams['docID'];
 				$pageID = $requestParams['pageID'];
 				Zend_Loader::loadClass("Tokens");
+				Zend_Loader::loadClass("Issues");
 				$tokObj = new Tokens;
 				$text = $tokObj->getGapVisDocPage($docID, $pageID);
 				if($text != false){

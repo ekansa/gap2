@@ -23,44 +23,151 @@ class Document {
 	 
 	 const docResultLinkSuffix = "/edina/doc-review?docID=";
 	 
+	 const docCacheLife = 7200; // cache lifetime, measured in seconds, 7200 = 2 hours
+	 const docCache = "./doc_cache/"; // Directory where to put the cache files;
+	 const DocCacheIDPrefix = "doc_";
+	 
 	 //get the data by ID, formated for GapVis
 	 function getGapVisDataByID($id){
-		  $output = false;
+		 
 		  $db = $this->startDB();
 		  $id = App_Security::inputCheck($id);
-		  $sql = "SELECT * FROM gap_documents WHERE id = $id LIMIT 1; ";
-		  $result = $db->fetchAll($sql, 2);
-		  if($result){
-				
-				$gazRefObs = new GazetteerRefs;
-				$gazRefObs->updatePleiadesData();
-				
-				$this->id = $id;
-				$this->parserID = $result[0]["parserID"];
-				$this->batchID =  $result[0]["batchID"];
-				$this->status = $result[0]["status"];
-				$this->title = $result[0]["title"];
-				$this->url = $result[0]["url"];
-				$this->created = $result[0]["created"];
-				$this->updated = $result[0]["updated"];
-				$pageArray = $gazRefObs->getGapVisPageSummaryByDocID($id);
-				$placesArray = $gazRefObs->getGapVisPlaceSummaryByDocID($id);
-					
-				$output = array(
-					 "id" => $id,
-					 "title" => $result[0]["title"],
-					 "uri" => $result[0]["url"],
-					 "author" => "Analysed by the Edina/Unlock GeoParser",
-					 "printed" => $result[0]["updated"],
-					 "pages" => $pageArray,
-					 "places" => $placesArray
-				);
-				
-		  }
+		  $output = $this->checkCachedDoc($id);
+		  
+		  if(!$output){
+				$sql = "SELECT gd.parserID,
+				gd.batchID,
+				gd.status,
+				gd.title,
+				gd.url,
+				gd.created,
+				gd.updated,
+				gd.langCode,
+				gl.lang_en,
+				gl.lang
+				FROM gap_documents AS gd
+				JOIN gap_languages AS gl ON gd.langCode = gl.code
+				WHERE gd.id = $id LIMIT 1; ";
+				$result = $db->fetchAll($sql, 2);
+				if($result){
+					 
+					 $gazRefObs = new GazetteerRefs;
+					 $gazRefObs->updatePleiadesData();
+					 
+					 $this->id = $id;
+					 $this->parserID = $result[0]["parserID"];
+					 $this->batchID =  $result[0]["batchID"];
+					 $this->status = $result[0]["status"];
+					 $this->title = $result[0]["title"];
+					 $this->url = $result[0]["url"];
+					 $this->created = $result[0]["created"];
+					 $this->updated = $result[0]["updated"];
+					 $pageArray = $gazRefObs->getGapVisPageSummaryByDocID($id);
+					 $placesArray = $gazRefObs->getGapVisPlaceSummaryByDocID($id);
+						 
+					 $output = array(
+						  "id" => $id,
+						  "title" => $result[0]["title"],
+						  "uri" => $result[0]["url"],
+						  "author" => "Analysed by the Edina/Unlock GeoParser",
+						  "printed" => $result[0]["updated"],
+						  "texts" => $this->getTranslatedVersions($id),
+						  "sections" => $this->getDocumentSections($id),
+						  "pages" => $pageArray,
+						  "places" => $placesArray
+					 );
+					 
+					 $this->cachedDocData($id, $output); //cache the result
+				}
+		  }//end case with no cached output
+		  
 		  return $output;
 	 }
 	 
 	 
+	 function checkCachedDoc($id){
+		  
+		  $frontendOptions = $frontendOptions = array(
+				 'lifetime' => self::docCacheLife,
+				 'automatic_serialization' => true
+		  );
+		 
+		  $backendOptions = array(
+				 'cache_dir' => self::docCache // Directory where to put the cache files
+			);
+		 
+		  $cache = Zend_Cache::factory('Core',
+									  'File',
+									  $frontendOptions,
+									  $backendOptions);
+		  
+		  $cacheID = self::DocCacheIDPrefix.$id;
+		  if(!$cache_result = $cache->load($cacheID)) {
+				return false;
+		  }
+		  else{
+				$output = Zend_Json::decode($cache_result);
+				return $output;
+		  }
+	 }
+	 
+	 
+	 function cachedDocData($id, $docData){
+		  
+		  $frontendOptions = $frontendOptions = array(
+				 'lifetime' => self::docCacheLife,
+				 'automatic_serialization' => true
+		  );
+		 
+		  $backendOptions = array(
+				 'cache_dir' => self::docCache // Directory where to put the cache files
+			);
+		 
+		  $cache = Zend_Cache::factory('Core',
+									  'File',
+									  $frontendOptions,
+									  $backendOptions);
+		  
+		  $cacheID = self::DocCacheIDPrefix.$id;
+		  $docJSON = Zend_Json::encode($docData);
+		  $cache->save($docJSON, $cacheID ); //save result to the cache
+	 }
+	 
+	 
+	 
+	 //get language information and other translated versions of the given document
+	 function getTranslatedVersions($id){
+		  
+		  $db = $this->startDB();
+		  $id = App_Security::inputCheck($id);
+		  
+		  $sql = "SELECT gd.langCode AS lang, gl.lang_en AS label, gl.lang AS language, gd.id AS documentID  
+		  FROM gap_documents AS gd
+		  JOIN gap_languages AS gl ON gd.langCode = gl.code
+		  WHERE gd.id = $id OR gd.transID = $id
+		  ";
+		  
+		  $result = $db->fetchAll($sql, 2);
+		  return $result;
+	 }
+	 
+	 //get document sections
+	 function getDocumentSections($id){
+		  
+		  $db = $this->startDB();
+		  $id = App_Security::inputCheck($id);
+		  
+		  $sql = "SELECT sectionID AS section, MIN(pageID) AS firstPage
+		  FROM gap_tokens
+		  WHERE docID = $id 
+		  GROUP BY sectionID
+		  ORDER BY sectionID
+		  ";
+		  
+		  $result = $db->fetchAll($sql, 2);
+		  return $result;
+
+	 }
 	 
 	 
 	 

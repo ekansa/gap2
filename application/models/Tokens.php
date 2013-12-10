@@ -8,7 +8,9 @@ Class for adding, removing, retrieving and updating tokens
 class Tokens {
  
     public $db; //database connection object
-    
+    public $sectionID; //current section
+	 
+	 
 	 function getGapVisDocPage($docID, $pageID, $paraID = false, $specificPlace = false){
 		  $output = false;
 		  $db = $this->startDB();
@@ -18,7 +20,7 @@ class Tokens {
 				$paraTerm = " AND gt.paraID = '$paraID ' ";
 		  }
 		  
-		  $sql = "SELECT gt.id, gt.token, gt.sentID, gt.pws, grefs.uriID, gt.paraID 
+		  $sql = "SELECT gt.id, gt.token, gt.sentID, gt.pws, grefs.uriID, gt.paraID, gt.sectionID
 					 FROM gap_tokens AS gt
 					 LEFT JOIN gap_gazrefs AS grefs ON grefs.tokenID = gt.id
 					 WHERE gt.docID = $docID AND gt.pageID = $pageID
@@ -28,6 +30,7 @@ class Tokens {
 		  
 		  $result = $db->fetchAll($sql, 2);
 		  if($result){
+				$this->sectionID = $result[0]["sectionID"];
 				$output = "";
 				$firstToken = true;
 				$lastParaID = false;
@@ -167,6 +170,48 @@ class Tokens {
 				return false;
 		  }
 	 }
+	 
+	 function tokenStructure($docID){
+		  $db = $this->startDB();
+		  $sql = "SELECT id, structure FROM gap_tokens WHERE docID = $docID  ORDER BY id ";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				$lastStructurePage = 0;
+				$lastDataPage = 0;
+			
+				$lastSection = 0;
+				foreach($result as $row){
+					 $id = $row["id"];
+					 $structure = $row["structure"];
+					 $where = " id = $id ";
+					 
+					 $strEx = explode("_", $structure);
+					 $actSection = $strEx[0];
+					 $actStructurePage =  $strEx[1];
+					 
+					 if($actStructurePage < $lastDataPage){
+						  if($actStructurePage == $lastStructurePage){
+								$actDataPage = $lastDataPage;
+						  }
+						  else{
+								$actDataPage = $lastDataPage + 1;
+						  }
+					 }
+					 else{
+						  $actDataPage = $actStructurePage;
+					 }
+					 
+					 
+					 $data = array("sectionID" => $actSection,
+										"pageID" => $actDataPage,
+										"paraID" => $strEx[2]);
+					 $db->update("gap_tokens", $data, $where);
+					 $lastDataPage = $actDataPage;
+					 $lastStructurePage = $actStructurePage;
+				}
+		  }
+	 }
+	 
 	 
 	 function initializeTab(){
 		  

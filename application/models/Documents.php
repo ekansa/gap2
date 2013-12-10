@@ -25,10 +25,15 @@ class Documents {
 	 function getGapVisWithPlaceID($IDgazURI){
 		  $db = $this->startDB();
 		  
-		  $sql = "SELECT gd.id, gd.title, gd.url AS uri, COUNT( gazrefs.id ) AS tokenCount, gb.title AS batchTtile, gd.updated
+		  $sql = "SELECT gd.id, gd.title, gd.url AS uri, COUNT( gazrefs.id ) AS tokenCount,
+		  gb.title AS batchTtile,
+		  gd.langCode AS lang,
+		  gl.lang_en,
+		  gd.updated
 		  FROM gap_documents AS gd
 		  JOIN gap_batches AS gb ON gb.id = gd.batchID
 		  JOIN gap_gazrefs AS gazrefs ON gd.id = gazrefs.docID
+		  JOIN gap_languages AS gl ON gd.langCode = gl.code
 		  WHERE gd.status = 'complete'
 		  AND gazrefs.uriID = $IDgazURI
 		  GROUP BY gazrefs.docID
@@ -46,6 +51,8 @@ class Documents {
 						  "title" => $row["title"],
 						  "uri" => str_replace("&", "&amp;", $row["uri"]),
 						  "author" => $row["batchTtile"],
+						  "lang" => $row["lang"],
+						  "language-label" => $row["lang_en"],
 						  "printed" => $row["updated"]
 					 );
 					 

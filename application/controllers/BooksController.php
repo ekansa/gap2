@@ -2,7 +2,7 @@
 /** Zend_Controller_Action */
 require_once 'Zend/Controller/Action.php';
 
-ini_set("memory_limit", "256M");
+ini_set("memory_limit", "1256M");
 // set maximum execution time to no limit
 ini_set("max_execution_time", "0");
 
@@ -55,6 +55,8 @@ class BooksController extends Zend_Controller_Action
 		  $host = App_Config::getHost();
 		  
 		  $output = array("found" => $requestParams);
+		  //$GazetteerRefsObj = new GazetteerRefs;
+		  //$GazetteerRefsObj->fixMissingDecimals();
 		  
 		  if(isset($requestParams['id'])){
 				$docID = $requestParams['id'];
@@ -93,12 +95,29 @@ class BooksController extends Zend_Controller_Action
 		  if(isset($requestParams['docID']) && isset($requestParams['pageID'])){
 				$docID = $requestParams['docID'];
 				$pageID = $requestParams['pageID'];
+				
+				Zend_Loader::loadClass("Document");
 				Zend_Loader::loadClass("Tokens");
 				Zend_Loader::loadClass("Issues");
+				
+				$docObj = new Document;
+				$translated = $docObj->getTranslatedVersions($docID);
+				
 				$tokObj = new Tokens;
+				//$tokObj->tokenStructure($docID);
 				$text = $tokObj->getGapVisDocPage($docID, $pageID);
 				if($text != false){
-					 $data = array("text" => $text, "image" => false);
+					 $data = array("text" => $text,
+										"section" => $tokObj->sectionID,
+										"image" => false);
+					 foreach($translated as $row){
+						  $lang = $row["lang"];
+						  if($row["lang"] != "en"){
+								$transDocID = $row["documentID"];
+								$data["text@".$lang] = $tokObj->getGapVisDocPage($transDocID, $pageID);
+						  }
+					 }
+					 
 				}
 		  }
 		  if(!$data){

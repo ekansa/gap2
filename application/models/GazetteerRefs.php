@@ -277,6 +277,32 @@ class GazetteerRefs {
 		  
 	 }
 	 
+	 //fixing bad decimal data.	 
+	 function fixMissingDecimals(){
+		  $db = $this->startDB();
+		  $sql = "SELECT * FROM gap_gazuris WHERE (latitude > 90 OR latitude < -90) OR (longitude > 180 OR  longitude < -180) ;";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				foreach($result as $row){
+					 $actLat = $row["latitude"];	 
+					 $actLon = $row["longitude"];	 
+					 if($actLat > 90 || $actLat < -90){
+						  if(abs($actLat) > 10000){
+								$actLat = $actLat / 1000;
+						  }
+					 }
+					 if($actLon > 180 || $actLon < -180){
+						  if(abs($actLon) > 10000){
+								$actLon = $actLon / 1000;
+						  }
+					 }
+					 $id = $row["id"];
+					 $where = "id = $id";
+					 $data = array("latitude" => $actLat, "longitude" => $actLon);
+					 $db->update("gap_gazuris", $data, $where);
+				}
+		  }
+	 }
 	 
 	 
 	 //add a place reference identified from the Geoparser

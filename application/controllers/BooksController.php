@@ -106,18 +106,24 @@ class BooksController extends Zend_Controller_Action
 				$tokObj = new Tokens;
 				//$tokObj->tokenStructure($docID);
 				$text = $tokObj->getGapVisDocPage($docID, $pageID);
+				$textAdded = false;
 				if($text != false){
-					 $data = array("text" => $text,
-										"section" => $tokObj->sectionID,
-										"image" => false);
 					 foreach($translated as $row){
 						  $lang = $row["lang"];
-						  if($row["lang"] != "en"){
-								$transDocID = $row["documentID"];
+						  $transDocID = $row["documentID"];
+						  if($transDocID == $docID ){
+								$data["text@".$lang] = $text;
+								$textAdded = true;
+						  }
+						  else{
 								$data["text@".$lang] = $tokObj->getGapVisDocPage($transDocID, $pageID);
 						  }
 					 }
-					 
+					 if(!$textAdded){
+						  $data["text"] = $text;
+					 }
+					 $data["section"] = $tokObj->sectionID;
+					 $data["image"] = false;
 				}
 		  }
 		  if(!$data){

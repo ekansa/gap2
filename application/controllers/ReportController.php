@@ -18,6 +18,81 @@ class ReportController extends Zend_Controller_Action
 		  $this->_helper->viewRenderer->setNoRender();
 		  echo "Nothing to see here!";
     }
+	 
+	  //deletes an issue. this doesn't really delete it, it just makes it go inactive
+	 public function searchAction(){
+		  $requestParams = $this->_request->getParams();
+		  Zend_Loader::loadClass("Issues");
+		  Zend_Loader::loadClass("Tokens");
+		  Zend_Loader::loadClass("Document");
+		  Zend_Loader::loadClass("GazetteerRefs");
+		  Zend_Loader::loadClass("GazetteerURIs");
+		  
+		  $docID = 1; //default to the first doc
+		  $relatedPlaceTokens = false;
+		  $placeURIs = false;
+		  $foundTokens = false;
+		  if(isset($requestParams["uri"])){
+				$this->view->searchTerm = $requestParams["uri"];
+				$this->view->searchType = "Place URI";
+				$tokensObj = new Tokens;
+				//$tokensObj->tokenStructure($docID);
+				$relatedPlaceTokens = $tokensObj->getUniqueTokensFromPlaceURI($requestParams["uri"]);
+				
+				if(isset($requestParams["docID"])){
+					 if(strlen($requestParams["docID"])> 0){
+						  $docID = $requestParams["docID"];
+					 }
+				}
+				$gazRefObj = new GazetteerRefs;
+				$placeURIs = $gazRefObj->getListofURIs($docID);
+		  }
+		  elseif(isset($requestParams["q"])){
+				$searchTerm = $requestParams["q"];
+				$this->view->searchTerm = $searchTerm;
+				$this->view->searchType = "Token String";
+				$startPage = false;
+				$endPage = false;
+				$structure = false;
+				$page = 1; //default for paging through requests
+				
+				if(isset($requestParams["docID"])){
+					 if(strlen($requestParams["docID"])> 0){
+						  $docID = $requestParams["docID"];
+					 }
+				}
+				if(isset($requestParams["startPage"])){
+					 if(strlen($requestParams["startPage"])> 0){
+						  $startPage = $requestParams["startPage"];
+					 }
+				}
+				if(isset($requestParams["endPage"])){
+					 if(strlen($requestParams["endPage"])> 0){
+						  $endPage = $requestParams["endPage"];
+					 }
+				}
+				if(isset($requestParams["endPage"])){
+					 if(strlen($requestParams["endPage"])> 0){
+						  $endPage = $requestParams["endPage"];
+					 }
+				}
+				if(isset($requestParams["page"])){
+					 if(strlen($requestParams["page"])> 0){
+						  $page = $requestParams["page"];
+					 }
+				}
+				
+				$tokensObj = new Tokens;
+				$foundTokens = $tokensObj->getTokensByToken($searchTerm, $docID, $page, $startPage, $endPage, $structure);
+		  }
+		  
+		  $this->view->docID = $docID;
+		  $this->view->requestParams = $requestParams;
+		  $this->view->relatedPlaceTokens = $relatedPlaceTokens;
+		  $this->view->placeURIs = $placeURIs;
+		  $this->view->foundTokens = $foundTokens;
+	 }
+	 
     
 	 public function placeIssuesAction(){
 		  $requestParams = $this->_request->getParams();
@@ -123,11 +198,11 @@ class ReportController extends Zend_Controller_Action
 		  $this->_helper->viewRenderer->setNoRender();
 		  $requestParams = $this->_request->getParams();
 		  Zend_Loader::loadClass("GazetteerURIs");
-		  if(isset($requestParams["uriID"]) && isset($requestParams["uri"])){
+		  if(isset($requestParams["uri"])){
 				
 				$gazURIobj = new GazetteerURIs;
 				$gazURIobj->updatePleiadesData($requestParams["uri"]);
-				$location = "../../report/place-issues/".$requestParams["uriID"];
+				$location = "../../report/search/?uri=".urlencode($requestParams["uri"]);
 				header("Location: ".$location);
 		  }
 		  else{
@@ -145,12 +220,13 @@ class ReportController extends Zend_Controller_Action
 		  Zend_Loader::loadClass("Tokens");
 		  Zend_Loader::loadClass("Document");
 		  Zend_Loader::loadClass("GazetteerRefs");
+		  Zend_Loader::loadClass("GazetteerURIs");
 		  if(isset($requestParams["tokenID"])){
 				
 				$tokenID = $requestParams["tokenID"];
 				$issuesObj = new Issues;
 				$this->view->tokenIssues = $issuesObj->getTokenIssues($tokenID);
-				
+				$this->view->requestParams = $requestParams;
 		  
 		  }
 		  else{
@@ -191,7 +267,7 @@ class ReportController extends Zend_Controller_Action
 		  echo $output;
 	 }
 	 
-    public function issueAction(){
+    public function addIssueAction(){
 		  $this->_helper->viewRenderer->setNoRender();
 		  $postParams =  $this->_request->getPost();
 	
@@ -226,6 +302,43 @@ class ReportController extends Zend_Controller_Action
 		  }
 		  echo $output;
 	 }
+	 
+	 
+	 
+	 public function updateTokenPlaceAction(){
+		  $this->_helper->viewRenderer->setNoRender();
+		  $postParams =  $this->_request->getPost();
+	
+		  if($postParams){
+				Zend_Loader::loadClass("Issues");
+				Zend_Loader::loadClass("Tokens");
+				Zend_Loader::loadClass("Document");
+				Zend_Loader::loadClass("GazetteerRefs");
+				Zend_Loader::loadClass("GazetteerURIs");
+				$issuesObj = new Issues;
+				$issuesObj->postParams = $postParams;
+				$success = $issuesObj->alterTokensPlace();
+				
+				if(!$issuesObj->nextTokenID){
+					 $location = "../../report/token-issues/".$postParams["tokenID"];
+				}
+				else{
+					 $location = "../../report/token-issues/".$issuesObj->nextTokenID."?lastIssueID=".$issuesObj->lastIssueID."&newPlaceURI=".urlencode($issuesObj->newPlaceURI);
+				}
+				
+				header("Location: ".$location);
+		  }
+		  else{
+				$message = array("success" => false, "message" => "Please POST issues to this URI.");
+				header("HTTP/1.0 405 Method Not Allowed");
+				header("Allow: POST");
+		  }
+		  
+	 }
+	 
+	 
+	 
+	 
 	 
 	 //deletes an issue. this doesn't really delete it, it just makes it go inactive
 	 public function deleteIssueAction(){
@@ -284,6 +397,14 @@ class ReportController extends Zend_Controller_Action
 				echo $output;
 		  }
 	 }
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
  
 }//end class
 

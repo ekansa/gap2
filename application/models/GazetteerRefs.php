@@ -9,7 +9,9 @@ class GazetteerRefs {
  
     
     public $db; //database connection object
-    
+    public $errors = false; //array of errors
+	 
+	 
 	 //default sentences per-page (defined in the config.ini file)
 	 function sentencesPerPage(){
 		  $registry = Zend_Registry::getInstance();
@@ -53,6 +55,7 @@ class GazetteerRefs {
 					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
 					 WHERE grefs.docID = $docID AND gt.pageID = $currentPage
 					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
+					 AND grefs.active = 1
 					 ORDER BY grefs.tokenID";
 					 
 					 $resultB = $db->fetchAll($sql, 2);
@@ -70,50 +73,6 @@ class GazetteerRefs {
 	 
 	 
 	 
-	 function OLDgetGapVisPageSummaryByDocID($docID){
-		 
-		  $sentencesPerPage = $this->sentencesPerPage();
-		  $db = $this->startDB();
-		  $sql = "SELECT gt.pageID, grefs.id, gt.sentID, grefs.uriID, 
-					 grefs.latitude AS pLat, grefs.longitude AS pLong, gazuris.uri, 
-					 gazuris.latitude, gazuris.longitude
-					 FROM gap_gazrefs AS grefs
-					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
-					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
-					 WHERE grefs.docID = $docID
-					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
-					 ORDER BY gt.pageID, grefs.tokenID
-					 ";
-					 
-		  
-		  $result = $db->fetchAll($sql, 2);
-		  $sentPages = array();
-		  $pagePlaces = array();
-		  if($result){
-				$previousPage = false;
-				foreach($result as $row){
-					 $currentPage = $row["pageID"];
-					 if($currentPage != $previousPage){
-						  if($previousPage != false){
-								$pagePlaces[] = $actPage;
-								unset($actPage);
-						  }
-						  $actPage = array("id" => $currentPage, "places" => array());
-						  $previousPage = $currentPage;
-					 }
-					 $actPage["places"][] = $row["uriID"];
-				}
-				/*
-				if(count($actPage["places"])>=0){
-					 $pagePlaces[] = $actPage;
-				}
-				*/
-				$pagePlaces[] = $actPage;
-		  }
-		  return $pagePlaces;
-	 }
-	
-	 
 	 
 	 //get a list of places identified in a document
 	 function getGapVisPlaceSummaryByDocID($docID){
@@ -127,6 +86,7 @@ class GazetteerRefs {
 					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
 					 WHERE grefs.docID = $docID
 					 AND (gazuris.latitude !=0 AND gazuris.longitude !=0)
+					 AND grefs.active = 1
 					 GROUP BY grefs.uriID
 					 ORDER BY grefs.tokenID
 				
@@ -139,7 +99,7 @@ class GazetteerRefs {
 					 JOIN gap_gazuris AS gazuris ON grefs.uriID = gazuris.id
 					 JOIN gap_tokens AS gt ON grefs.tokenID = gt.id
 					 WHERE grefs.docID = $docID
-					
+					 AND grefs.active = 1
 					 GROUP BY grefs.uriID
 					 ORDER BY grefs.tokenID
 				
@@ -240,6 +200,89 @@ class GazetteerRefs {
 		  return $actPlace;
 	 }
 	 
+	 //get a list of all URIs actively used in a document
+	 function getListofURIs($docID = false){
+		  
+		  $db = $this->startDB();
+		  
+		  $docTerm = "";
+		  if($docID != false){
+				$docTerm = " AND grefs.docID = $docID ";
+		  }
+		  
+		  $sql = "SELECT 
+		  gazuris.uri, gazuris.label, gazuris.id, gazuris.latitude, gazuris.longitude
+		  FROM gap_gazuris AS gazuris
+		  JOIN gap_gazrefs AS grefs ON  gazuris.id = grefs.uriID
+		  WHERE grefs.active = 1 $docTerm
+		  GROUP BY gazuris.id
+		  ORDER BY gazuris.label
+		  ";
+		  
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				return $result;
+		  }
+		  else{
+				return false;
+		  }
+		  
+	 }
+	
+	 
+	 
+	 
+	 
+	 //change a token's old place references to not active. add a new active place reference
+	 function updatePlaceReference($tokenID, $docID, $placeURI){
+		  $output = false;
+		  $uriID = false;
+		  if(!$placeURI){
+				//no place URI, so we're just turning off gaz references to a given token
+				$this->deactiveTokenGazRefs($tokenID); //simply deactivate all place references associated with a given token
+				$output = true;
+		  }
+		  else{
+				//we've got a place URI, so now we need to associate it with a given place
+				$gazURIobj = new GazetteerURIs; 
+				$uriID = $gazURIobj->getOrAddPlaceRecord($placeURI);
+				if(!$uriID){
+					 $this->noteError(implode(" ", $gazURIobj->errors));
+				}
+				else{
+					 $this->deactiveTokenGazRefs($tokenID); //simply deactivate all place references associated with a given token
+					 $data = array("tokenID" => $tokenID,
+										"docID" => $docID,
+										"active" => true,
+										"gazRef" => "user input",
+										"uriID" => $uriID
+										);
+					 
+					 $ok = $this->addRecord($data);
+					 if(!$ok){
+						  $this->noteError("Error in adding new gaz reference: ".(implode(" ", $data)));
+					 }
+					 else{
+						  $output = true;
+					 }
+				}
+		  }
+		  
+		  return $output;
+	 }
+	 
+	 //deactivates place references for a given token.
+	 function deactiveTokenGazRefs($tokenID){
+		  $db = $this->startDB();
+		  $where = "tokenID = $tokenID";
+		  $data = array("active" => false);
+		  $db->update("gap_gazrefs", $data, $where);
+	 }
+	 
+	 
+	 
+	 
+	 
 	 
 	 //get pleaides Label data
 	 function updatePleiadesData(){
@@ -258,12 +301,17 @@ class GazetteerRefs {
 					 if($jsonStringData ){
 						  @$jsonData = Zend_Json::decode($jsonStringData);
 						  if(is_array($jsonData)){
+								$data = array();
 								if(isset($jsonData["title"])){
-									 $data = array("label" => $jsonData["title"]);
-									 $where = " uri = '$baseURI' ";
-									 $db->update("gap_gazuris", $data, $where);
-									 $update = true;
+									 $data["label"]= $jsonData["title"];
 								}
+								if(isset($jsonData["reprPoint"])){
+									 $data["longitude"]= $jsonData["reprPoint"][0];
+									 $data["latitude"]= $jsonData["reprPoint"][1];
+								}
+								$where = " uri = '$baseURI' ";
+								$db->update("gap_gazuris", $data, $where);
+								$update = true;
 						  }
 					 }
 					 if(!$update){
@@ -332,6 +380,20 @@ class GazetteerRefs {
 				return false;
 		  }
 	 }
+	 
+	 
+	 //stores an error message
+	 function noteError($errorMessage){
+		  if(is_array($this->errors)){
+				$errors = $this->errors;
+		  }
+		  else{
+				$errors = array();
+		  }
+		  $errors[] = $errorMessage;
+		  $this->errors = $errors;
+	 }
+	 
 	 
 	 function initializeTab(){
 		  

@@ -47,8 +47,19 @@ class GazetteerURIs {
 								$data = array();
 								$data["uri"] = $uri;
 								$data["label"] = $jsonData["title"];
-								$data["latitude"] = $jsonData["reprPoint"][1];
-								$data["longitude"] = $jsonData["reprPoint"][0];
+								$data["latitude"] = false;
+								$data["longitude"] = false;
+								if(isset($jsonData["reprPoint"])){
+									 $data["latitude"] = $jsonData["reprPoint"][1];
+									 $data["longitude"] = $jsonData["reprPoint"][0];
+								}
+								if(!$data["latitude"]){
+									 $data["latitude"] = 0;
+								}
+								if(!$data["longitude"]){
+									 $data["longitude"] = 0;
+								}
+								
 								$db->insert('gap_gazuris', $data);
 								$n = $db->lastInsertId();
 								$output = $n;
@@ -220,7 +231,6 @@ class GazetteerURIs {
 				$db->update("gap_gazrefs", $data, $where);
 		  }
 	 }
-	 
 	 
 	 
 	 function getMakeTempURI($token){

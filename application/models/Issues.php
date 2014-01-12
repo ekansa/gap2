@@ -11,6 +11,10 @@ class Issues {
 	 public $db; //database connection object
 	 public $postParams; //posted issues parameters
 
+	 public $nextTokenID; //ID for the next token to change
+	 public $newPlaceURI; //URI for the next token
+	 public $lastIssueID; //last issue ID created
+	 
 	 const pleiadesBase = "http://pleiades.stoa.org/places/"; //base uri for pleides places
 
 	 
@@ -57,11 +61,15 @@ class Issues {
 		  $place  = false;
 		  
 		  $db = $this->startDB();
-		  $sql = "SELECT * FROM gap_issues WHERE tokenID = $tokenID  AND active = 1 ORDER BY updated;";
+		  $sql = "SELECT * FROM gap_issues WHERE tokenID = $tokenID  AND active = 1 ORDER BY updated DESC;";
 		  $result = $db->fetchAll($sql, 2);
+		  
+		  $sql = "SELECT * FROM gap_issues WHERE tokenID = $tokenID  AND active = 0 ORDER BY updated DESC;";
+		  $resultOld = $db->fetchAll($sql, 2);
 		  
 		  $tokensObj = new Tokens;
 		  $tokenData = $tokensObj->getTokenByID($tokenID);
+		  $tokensObj->highlightToken = $tokenID;
 		  if(is_array($tokenData)){
 				$token = $tokenData["token"];
 				$paraID = $tokenData["paraID"];
@@ -69,6 +77,12 @@ class Issues {
 				$docID =  $tokenData["docID"];
 				$context = $tokensObj->getGapVisDocPage($docID, $pageID, $paraID, $tokenID);
 				$place = $tokensObj->getPlaceByTokensID($tokenID);
+				$related = false;
+				$relatedPlaceTokens = false;
+				if(is_array($place)){
+					 $related  = $tokensObj->getTokenIDsBySharedPlaceURIid($tokenID, $place["uriID"], $token);
+					 $relatedPlaceTokens = $tokensObj->getUniqueTokensFromPlaceURI($place["uri"]);
+				}
 				$docObj = new Document;
 				$document = $docObj->getByID($docID);
 		  }
@@ -80,7 +94,11 @@ class Issues {
 								"pageID" => $pageID,
 								"context" => $context,
 								"place" => $place,
-								"issues" => $result
+								"related" => $related,
+								"relatedPlaceTokens" => $relatedPlaceTokens,
+								"issues" => $result,
+								"oldIssues" => $resultOld,
+								"oldPlaces" => $tokensObj->getTokenDeactivatedPlaceRefs($tokenID)
 								);
 		  
 		  return $output;
@@ -116,6 +134,19 @@ class Issues {
 	 }
 	 
 	 
+	 //get issue by an ID
+	 function getIssue($issueID){
+		  $db = $this->startDB();
+		  $sql = "SELECT * FROM gap_issues WHERE id = $issueID  LIMIT 1;";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				return $result[0];
+		  }
+		  else{
+				return false;
+		  }
+	 }
+	 
 	 
 	 
 	 //create a new issue record
@@ -125,6 +156,10 @@ class Issues {
 		  $postParams = $this->postParams;
 	 
 		  $data = array();
+		  
+		  /* Old version of posting issues
+		   * 
+		  */
 		  $data["active"] = true;
 		  if(isset($postParams["ctf-problem"])){
 				$data["note"] = $postParams["ctf-problem"];
@@ -147,16 +182,126 @@ class Issues {
 		  if(isset($postParams["place-id"])){
 				$data["placeID"] = $postParams["place-id"];
 		  }
-		  
-		  if(count($data) == 6){
-				$db->insert("gap_issues", $data);
-				return true;
-		  }
-		  else{
-				return false;
-		  }
+
+		  $db->insert("gap_issues", $data);
+		 
 	 }//end function
 
+	 
+	 
+	 
+	 function alterTokensPlace(){
+		  $postParams = $this->postParams;
+		  $numberChanged = 0;
+		  $tokenID = false;
+		  if(isset($postParams["tokenID"])){
+				$tokenID = $postParams["tokenID"];
+		  }
+		  $scope = "this";
+		  if(isset($postParams["scope"])){
+				$scope = $postParams["scope"];
+		  }
+		  $note = false;
+		  if(isset($postParams["note"])){
+				$note = $postParams["note"];
+		  }
+		  $placeURI = "error";
+		  if(isset($postParams["placeURI"])){
+				if(strstr($postParams["placeURI"], "http://")){
+					 $placeURI = $postParams["placeURI"];
+				}
+				elseif(strlen($postParams["placeURI"]) <= 1){
+					 $placeURI = false;
+				}
+		  }
+		  if($placeURI != "error" && $tokenID != false){
+				$alterTokenIDs = array();
+				$alterTokenIDs[] = $tokenID;
+				$this->nextTokenID = false;
+				$this->newPlaceURI = false;
+				if($scope == "all-c"){
+					 $tokensObj = new Tokens;
+					 $relatedTokens = $tokensObj->getTokenIDsByCommonPlace($tokenID);
+					 if(is_array($relatedTokens)){
+						  $this->nextTokenID = $relatedTokens[0]; //the first of other related tokens! :)
+						  $this->newPlaceURI = $placeURI;
+					 }
+				}
+				elseif($scope == "all"){
+					 $tokensObj = new Tokens;
+					 $relatedTokens = $tokensObj->getTokenIDsByCommonPlace($tokenID);
+					 if(is_array($relatedTokens)){
+						  foreach($relatedTokens as $alterID){
+								$alterTokenIDs[] = $alterID; //add to the array of tokenIDs to alter
+						  }
+					 }
+				}
+				else{
+					 //do nothing
+				}
+				
+				
+				//iterate through and make all the changes!
+				foreach($alterTokenIDs as $alterID){
+					 $ok = $this->alterTokenPlace($alterID, $placeURI, $note);
+					 if($ok){
+						  $numberChanged++;
+					 }
+				}
+				
+		  }
+		  
+		  return  $numberChanged;
+	 }
+	 
+	 
+	 
+	 
+	 //change the place for a particular token
+	 function alterTokenPlace($tokenID, $placeURI, $note){
+		  $output = false;
+		  $db = $this->startDB();
+		  $tokensObj = new Tokens;
+		  $tokenData = $tokensObj->getTokenByID($tokenID);
+		  if(is_array($tokenData)){
+				$token = $tokenData["token"];
+				$paraID = $tokenData["paraID"];
+				$pageID = $tokenData["pageID"];
+				$docID =  $tokenData["docID"];
+
+				$data = array("active" => false, //not active since this is a place change, we're just logging the change
+								  "issueType" => "Place URI change",
+								  "oldID" => 0,
+								  "docID" => $docID,
+								  "pageID" => $pageID,
+								  "placeID" => 0,
+								  "tokenID" => $tokenID,
+								  "note" =>  $note
+								  );
+				
+				$gazRefObj = new GazetteerRefs;
+				$ok = $gazRefObj->updatePlaceReference($tokenID, $docID, $placeURI);
+				if(!$ok){
+					 $data["active"] = true;
+					 $data["note"] .= " Errors: ".implode(" ", $gazRefObs->errors);
+				}
+		  
+				try{
+					 $db->insert("gap_issues", $data);
+					 $this->lastIssueID = $db->lastInsertId();
+					 $output = true;
+				}
+				catch (Exception $e) {
+					 
+				}  
+		  }
+	 }//end function
+	 
+	 
+	 
+	 
+	 
+	 
 	 //delete an issue
 	 function deleteIssueByID($issueID){
 		  $db = $this->startDB();

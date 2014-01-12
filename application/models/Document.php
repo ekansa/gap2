@@ -32,6 +32,7 @@ class Document {
 		 
 		  $db = $this->startDB();
 		  $id = App_Security::inputCheck($id);
+		  $this->clearObsoleteCache();
 		  $output = $this->checkCachedDoc($id);
 		  
 		  if(!$output){
@@ -83,6 +84,33 @@ class Document {
 		  
 		  return $output;
 	 }
+	 
+	 
+	 function clearObsoleteCache(){
+		  $db = $this->startDB();
+		  $sql = "SELECT * 
+				FROM  gap_gazrefs 
+				WHERE updated >= TIMESTAMPADD( HOUR , -2, NOW( ) ) 
+				LIMIT 1";
+				
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				$frontendOptions = $frontendOptions = array(
+				 'lifetime' => self::docCacheLife,
+				 'automatic_serialization' => true
+				);
+			  
+				$backendOptions = array(
+					  'cache_dir' => self::docCache // Directory where to put the cache files
+				 );
+				$cache = Zend_Cache::factory('Core',
+									  'File',
+									  $frontendOptions,
+									  $backendOptions);
+				$cache->clean(Zend_Cache::CLEANING_MODE_ALL);
+		  }
+	 }
+	 
 	 
 	 
 	 function checkCachedDoc($id){

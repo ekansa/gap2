@@ -1,7 +1,7 @@
 <?php
 
 $tokenIssues = $this->tokenIssues;
-
+$requestParams = $this->requestParams;
 ?>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -19,6 +19,16 @@ $tokenIssues = $this->tokenIssues;
 		<script src="../../js/editorial/utils.js" type="text/javascript" ></script>
 		<script src="../../js/editorial/prototype.js" type="text/javascript" ></script>
 		<script src="../../js/editorial/reportEdits.js" type="text/javascript" ></script>
+		<script src="http://opencontext.org/js/jquery/jquery-1.7.2.min.js" type="text/javascript"></script>
+		<script src="http://opencontext.org/js/bootstrap/bootstrap-transition.js" type="text/javascript"></script>
+		<script src="http://opencontext.org/js/bootstrap/bootstrap-tab.js" type="text/javascript"></script>
+		<script src="http://opencontext.org/js/bootstrap/bootstrap-dropdown.js" type="text/javascript"></script>
+	 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+		<script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+		<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+		<script src="http://opencontext.org/js/map-browse/GoogleLayers.js" type="text/javascript"></script>
+
+	
 	
 		<style type="text/css">
 			span.place {
@@ -48,16 +58,90 @@ $tokenIssues = $this->tokenIssues;
 				top: 20%;
 				
 			}
+			span.highlight {
+				font-weight: bold;
+				color: #428bca;
+				background-color:yellow;
+			}
+			div.tab {
+				display: table;
+			}
+			div.tr {
+				display: table-row;
+			}
+			div.td {
+				display: table-cell;
+				padding: 2%;
+				vertical-align: middle;
+			}
+			div.tdtight {
+				display: table-cell;
+				padding: 2px;
+				vertical-align: middle;
+			}
 		</style>
    </head>
     
 	<body>
 	
 		<div id="container">
-			<header>
+			<header style="padding-bottom:5%;">
 				<h3><a href="http://gap2.alexandriaarchive.org/gapvis/index.html">GapVis</a> <span class=beta>BETA</span></h3>
+				<div class="tab" style="width:100%;">
+					<div class="tr">
+						<div class="td" style="width:30%;">
 				<nav> <a href="http://gap2.alexandriaarchive.org/gapvis/index.html">Home</a> &middot; <a href="http://googleancientplaces.wordpress.com/about/">About Us</a> &middot; <a href="http://googleancientplaces.wordpress.com/">Blog</a>
+				
 				</nav>
+						</div>
+						<div class="td" style="width:30%;">
+							<div class="tab" style="width:100%;">
+								<form action="../../report/search" method="get">
+									<input name="docID" type="hidden" value="<?php echo $this->docID; ?>" />
+									<div class="tr">
+										<div class="tdtight">
+											<label for="tokenSearch" class="col-sm-2 control-label">Token Search</label>
+										</div>
+										<div class="tdtight">
+											<input name="q" type="search" class="form-control" id="tokenSearch" placeholder="Search term" />
+										</div>
+									</div>
+									<div class="tr">
+										<div class="tdtight">
+											 
+										</div>
+										<div class="tdtight">
+											<button type="submit" class="btn btn-default btn-sm">Search</button>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+						<div class="td" style="width:30%;">
+							<div class="tab" style="width:100%;">
+								<form action="../../report/search" method="get">
+									<input name="docID" type="hidden" value="<?php echo $this->docID; ?>" />
+									<div class="tr">
+										<div class="tdtight">
+											<label for="uriSearch" class="col-sm-2 control-label">Place URI Search</label>
+										</div>
+										<div class="tdtight">
+											<input name="uri" type="search" class="form-control" id="uriSearch" placeholder="Search Place URI" />
+										</div>
+									</div>
+									<div class="tr">
+										<div class="tdtight">
+											 
+										</div>
+										<div class="tdtight">
+											<button type="submit" class="btn btn-default btn-sm">Search</button>
+										</div>
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>
 			</header>
 			<div id="app-view" class="clearfix">
 				
@@ -75,7 +159,15 @@ $tokenIssues = $this->tokenIssues;
 									<th>Source URI</th><td><a href="<?php echo $tokenIssues["document"]["url"]; ?>" target="_blank"><?php echo $tokenIssues["document"]["url"]; ?></a></td>
 								</tr>
 								<tr>
-									<th>Page</th><td><?php echo $tokenIssues["pageID"]; ?> <a href="../../gapvis/index.html#book/<?php echo $tokenIssues["docID"]; ?>/read/<?php echo $tokenIssues["pageID"]; ?>">[View page on GapVis]</a></td>
+									<th>Page</th><td><?php echo $tokenIssues["pageID"]; ?> <a href="../../gapvis/index.html#book/<?php echo $tokenIssues["docID"]; ?>/read/<?php echo $tokenIssues["pageID"]; ?>">[View page on GapVis]</a> <span style="margin-left: 40%;">Navigate Tokens for Issues: 
+									<?php
+									if($tokenIssues["tokenID"] > 1){
+										echo " <a href=\"../../report/token-issues/".($tokenIssues["tokenID"] - 1)."\">[Previous Token]</a> ";
+									}
+									echo " <a href=\"../../report/token-issues/".($tokenIssues["tokenID"] + 1)."\">[Next Token]</a> ";
+									?>
+									</span>
+									</td>
 								</tr>
 								<tr>
 									<th>Context</th><td><?php echo $tokenIssues["context"]; ?></td>
@@ -85,29 +177,170 @@ $tokenIssues = $this->tokenIssues;
 								?>
 								<form method="post" action="../../report/update-geo" >
 								<tr>
-									<th>Place Name</th><td><?php echo $tokenIssues["place"]["label"]; ?></td>
+									<th>Place Name</th><td id="geo-label"><?php echo $tokenIssues["place"]["label"]; ?></td>
 								</tr>	
 								<tr>
-									<th>Place URI</th><td><a href="<?php echo $tokenIssues["place"]["uri"]; ?>" target="_blank"><?php echo $tokenIssues["place"]["uri"]; ?></a></td>
+									<th>Place URI</th><td id="geo-source"><a href="<?php echo $tokenIssues["place"]["uri"]; ?>" target="_blank"><?php echo $tokenIssues["place"]["uri"]; ?></a></td>
 								</tr>	
 								<tr>
-									<th>Latitude</th><td><?php echo $tokenIssues["place"]["latitude"]; ?></td>
+									<th>Latitude</th><td id="geo-lat"><?php echo $tokenIssues["place"]["latitude"]; ?></td>
 								</tr>
 								<tr>
-									<th>Longitude</th><td><?php echo $tokenIssues["place"]["longitude"]; ?></td>
+									<th>Longitude</th><td id="geo-lon"><?php echo $tokenIssues["place"]["longitude"]; ?></td>
+								</tr>
+								<tr>
+									<th>Map</th><td><div id="map" style="height:200px;"></div></td>
 								</tr>
 								</form>
 								<?php	
 								}//end case with place data
 								?>
+								<?php
+								$relatedCount = 0;
+								if(is_array($tokenIssues["related"])){
+								?>
+								
+								<tr>
+									<th>Related Tokens</th><td><?php
+									
+									$relOutput = false;
+									$relatedCount = count($tokenIssues["related"]);
+									foreach($tokenIssues["related"] as $id){
+										$actLink = "<a href=\"../../report/token-issues/$id\">$id</a>";
+										if(!$relOutput){
+											$relOutput = $actLink;
+										}
+										else{
+											$relOutput .= ", ".$actLink;
+										}
+									}
+									echo $relOutput;
+									?></td>
+								</tr>	
+								
+								<?php	
+								}//end case with place data
+								?>
+								
+								<?php
+								
+								if(is_array($tokenIssues["relatedPlaceTokens"])){
+								?>
+								
+								<tr>
+									<th>Tokens Sharing this Place Reference</th><td><?php
+									
+									$relPlTokOutput = false;
+									foreach($tokenIssues["relatedPlaceTokens"] as $tokenArray){
+										$id = $tokenArray["id"];
+										$placeToken = $tokenArray["token"];
+										$actLink = "<a href=\"../../report/token-issues/$id\">$placeToken</a>";
+										if(!$relPlTokOutput){
+											$relPlTokOutput = $actLink;
+										}
+										else{
+											$relPlTokOutput .= ", ".$actLink;
+										}
+									}
+									echo $relPlTokOutput;
+									?></td>
+								</tr>	
+								
+								<?php	
+								}//end case with place data
+								?>
+								
 							</tbody>
 						</table>
 					</div>
-						
-					<div id="issuesDiv">
-						<h5>Issues</h5>
+					
 					<?php
-					if(is_array($tokenIssues["issues"])){
+					$noteText = "";
+					$newPlaceURI = false;
+					$placeHolderURI = "Place URI";
+					if(isset($requestParams["newPlaceURI"])){
+						$newPlaceURI = $requestParams["newPlaceURI"];
+						$placeHolderURI = "";
+					}
+					if(isset($requestParams["lastIssueID"])){
+						$issuesObj = new Issues;
+						$issueData = $issuesObj->getIssue($requestParams["lastIssueID"]);
+						if(is_array($issueData)){
+							$noteText = $issueData["note"];
+						}
+					}
+					?>
+					
+					<div id="addPlaceDiv" style="width:100%;">
+						<h5>Alter Place Reference</h5>
+						<div class="tab" style="width:90%;">
+						<form method="post" action="../../report/update-token-place"  class="form-horizontal" role="form">
+							<input type="hidden" value="<?php echo $tokenIssues["tokenID"]; ?>" name="tokenID" />
+							<div class="tr">
+								<div class="td" style="width:30%;">
+									New or Updated Place URI<br/><p class=""><small><em>Blank if no place should be assigned to this token</em></small></p>
+								</div>
+								<div class="td">
+									<input type="text" value="<?php echo $newPlaceURI ; ?>"  name="placeURI" id="newPlaceURI" placeholder="<?php echo $placeHolderURI ; ?>" style="width:75%;" />
+								</div>
+							</div>
+							<div class="tr">
+								<div class="td">
+									Update Scope <br/>
+									<p class=""><small><em>Change place URI assignments for only this or all instances of this token that are associated with the current place URI?</em></small></p>
+								</div>
+								<div class="td" >
+									<?php
+									if(!$newPlaceURI){
+									?>	
+									
+									<span style="padding:2%">This alone: <input type="radio" value="this"  name="scope" style="top:-5px;" checked/></span>
+									
+										<?php
+										if($relatedCount > 0){
+										
+										?>
+										
+										<span style="padding:2%">All <?php echo $relatedCount  ; ?> (with confirnmation): <input type="radio" value="all-c"  name="scope"  style="top:-5px;" /></span>
+										<span style="padding:2%">All <?php echo $relatedCount  ; ?> (NO confirmation): <input type="radio" value="all"  name="scope"  style="top:-5px;" /></span>
+										
+										<?php
+										}
+									}
+									else{
+									?>	
+									
+									<span style="padding:2%">This alone: <input type="radio" value="this"  name="scope" style="top:-5px;" /></span>
+									<span style="padding:2%">All (with confirnmation): <input type="radio" value="all-c"  name="scope"  style="top:-5px;" checked /></span>
+									<span style="padding:2%">All (NO confirmation): <input type="radio" value="all"  name="scope"  style="top:-5px;" /></span>
+										
+									<?php	
+									}//end case with a newplaceURI
+									?>
+								</div>
+							</div>
+							<div class="tr">
+								<div class="td">
+									Note
+								</div>
+								<div class="td" >
+									<textarea class="form-control" rows="3" id="newNote" name="note" style="width:75%;"><?php echo $noteText ; ?></textarea>
+								</div>
+							</div>
+							<div class="tr">
+								<div class="td"> </div>
+								<div class="td">
+									<button class="btn btn-mini" title="Report this issue" type="submit">Submit</button>
+								</div>
+							</div>
+						</form>
+						</div>
+					</div>
+					
+					<div id="issuesDiv">
+						<h5>Noted Issues</h5>
+					<?php
+					if(is_array($tokenIssues["issues"]) || is_array($tokenIssues["oldIssues"])|| is_array($tokenIssues["oldPlaces"])){
 							
 					?>
 					
@@ -122,6 +355,7 @@ $tokenIssues = $this->tokenIssues;
 							</thead>
 							<tbody>
 							<?php
+							if(is_array($tokenIssues["issues"])){
 							foreach($tokenIssues["issues"] as $issue){
 							?>
 								<tr id="issue-<?php echo $issue["id"]; ?>">
@@ -146,6 +380,41 @@ $tokenIssues = $this->tokenIssues;
 								</tr>
 							<?php	
 							}//end loop through issues
+							}//end case of old issues
+							
+							if(is_array($tokenIssues["oldIssues"])){
+							foreach($tokenIssues["oldIssues"] as $issue){
+							?>
+								<tr id="issue-<?php echo $issue["id"]; ?>">
+									<td>[Not active]
+									</td>
+									<!-- <td><?php echo $issue["id"]; ?></td> -->
+									<td><?php echo $issue["updated"]; ?></td>
+									<td>
+										<?php echo $issue["note"]; ?>
+									</td>
+								</tr>
+							<?php	
+							}//end loop through issues
+							}//end case of old issues
+							
+							if(is_array($tokenIssues["oldPlaces"])){
+							foreach($tokenIssues["oldPlaces"] as $oldPlace){
+							?>
+								<tr id="oldplace-<?php echo $oldPlace["id"]; ?>">
+									<td>Former Place Assocation
+									</td>
+									<!-- <td><?php echo $oldPlacee["id"]; ?></td> -->
+									<td><?php echo $oldPlace["updated"]; ?></td>
+									<td>
+										<strong><?php echo $oldPlace["label"]; ?></strong>
+										<br/>[<?php echo $oldPlace["latitude"]; ?>, <?php echo $oldPlace["longitude"]; ?>]
+										<br/><a href="<?php echo $oldPlace["uri"]; ?>"><?php echo $oldPlace["uri"]; ?></a>
+									</td>
+								</tr>
+							<?php	
+							}//end loop through issues
+							}//end case of old issues
 							
 							?>
 							</tbody>
@@ -168,5 +437,61 @@ $tokenIssues = $this->tokenIssues;
 			
 		</div>
 	
+		<script type="text/javascript">
+				var actLatDom = document.getElementById("geo-lat");
+				var actLonDom = document.getElementById("geo-lon");
+				var actGeoLabelDom = document.getElementById("geo-label");
+				var actLat = actLatDom.innerHTML;
+				var actLon = actLonDom.innerHTML;
+				var actGeoLabel = actGeoLabelDom.innerHTML;
+				var popUpMessage = "<div><p class=\"tinyText\">[Lat: "+ actLat + ", Lon: " + actLon  +"] " + actGeoLabel + "</p></div>";
+		  
+		  
+				var satelliteView = 1;
+				var map = L.map('map').setView([actLat, actLon], 6);
+				var bounds = new L.LatLngBounds();
+				var osmTiles = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            });
+            
+            var mapboxTiles = L.tileLayer('http://api.tiles.mapbox.com/v3/ekansa.map-tba42j14/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://MapBox.com">MapBox.com</a> '
+            });
+            
+            var ESRISatelliteTiles = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; <a href="http://services.arcgisonline.com/">ESRI.com</a> '
+            });
+            
+            var gmapRoad = new L.Google('ROADMAP');
+            var gmapSat = new L.Google('SATELLITE');
+            var gmapTer = new L.Google('TERRAIN');
+            
+            var baseMaps = {
+                "Google-Terrain": gmapTer,
+                "Google-Satellite": gmapSat,
+                "ESRI-Satellite": ESRISatelliteTiles,
+                "Google-Roads": gmapRoad,
+                "OpenStreetMap": osmTiles,
+                "MapBox": mapboxTiles,
+            };
+           
+            if(satelliteView){
+                map.addLayer(gmapSat);
+            }
+            else{
+                map.addLayer(gmapTer);
+            }
+            map._layersMaxZoom = 20;
+            L.control.layers(baseMaps).addTo(map);
+				
+				
+				var popup = L.popup()
+					 .setContent(popUpMessage);
+				
+				var marker = L.marker([actLat, actLon]).addTo(map).bindPopup(popup);
+
+				
+		  </script>
+
 	</body>
 </html>

@@ -104,7 +104,9 @@ class BooksController extends Zend_Controller_Action
 				$translated = $docObj->getTranslatedVersions($docID);
 				
 				$tokObj = new Tokens;
-				//$tokObj->tokenStructure($docID);
+				if($docID == 2){
+					 //$tokObj->tokenStructure($docID);
+				}
 				$text = $tokObj->getGapVisDocPage($docID, $pageID);
 				$textAdded = false;
 				if($text != false){
@@ -132,6 +134,8 @@ class BooksController extends Zend_Controller_Action
 		  }
 		  else{
 				$output = Zend_Json::encode($data);
+				$output = preg_replace("/\\\\u([a-f0-9]{4})/e", "iconv('UCS-4LE','UTF-8',pack('V', hexdec('U$1')))", json_encode($data));
+				//$output = json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE);
 		  }
 		  //$output["memory"] = memory_get_usage(true);
 		  header('Content-Type: application/json; charset=utf8');

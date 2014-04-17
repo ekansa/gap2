@@ -29,11 +29,14 @@ class Documents {
 		  gb.title AS batchTtile,
 		  gd.langCode AS lang,
 		  gl.lang_en,
+		  gazuris.uri AS gazURI,
+		  gazuris.label AS gazLabel,
 		  gd.updated
 		  FROM gap_documents AS gd
 		  JOIN gap_batches AS gb ON gb.id = gd.batchID
 		  JOIN gap_gazrefs AS gazrefs ON gd.id = gazrefs.docID
 		  JOIN gap_languages AS gl ON gd.langCode = gl.code
+		  JOIN gap_gazuris AS gazuris ON  gazuris.id = gazrefs.uriID
 		  WHERE gd.status = 'complete'
 		  AND gazrefs.uriID = $IDgazURI
 		  GROUP BY gazrefs.docID
@@ -48,6 +51,8 @@ class Documents {
 					 $document = array(
 						  "id" => $row["id"],
 						  "tokenCount" => $row["tokenCount"],
+						  "gazURI" => $row["gazURI"],
+						  "gazLabel" => $row["gazLabel"],
 						  "title" => $row["title"],
 						  "uri" => str_replace("&", "&amp;", $row["uri"]),
 						  "author" => $row["batchTtile"],

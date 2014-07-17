@@ -55,8 +55,8 @@ class BooksController extends Zend_Controller_Action
 		  $host = App_Config::getHost();
 		  
 		  $output = array("found" => $requestParams);
-		  //$GazetteerRefsObj = new GazetteerRefs;
-		  //$GazetteerRefsObj->fixMissingDecimals();
+		  $GazetteerRefsObj = new GazetteerRefs;
+		  $GazetteerRefsObj->updatePleiadesCoordsData();
 		  
 		  if(isset($requestParams['id'])){
 				$docID = $requestParams['id'];

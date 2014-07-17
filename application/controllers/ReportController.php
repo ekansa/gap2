@@ -8,9 +8,14 @@ ini_set("memory_limit", "5120M");
 //@ini_set('display_errors', 0);
 
 class ReportController extends Zend_Controller_Action
-{   
+{
+	public $acceptEdits = true; //make this true to allow reporting functions
+	public $editMessage = "";
+	
     public function init() {
         /* Initialize action controller here */
+		$this->acceptEdits = false;
+		$this->message = "Editing and reporting features are now closed. No changes accepted.";
     }
       
     public function indexAction()
@@ -159,80 +164,94 @@ class ReportController extends Zend_Controller_Action
 		  Zend_Loader::loadClass("Document");
 		  Zend_Loader::loadClass("GazetteerRefs");
 		  Zend_Loader::loadClass("GazetteerURIs");
-		  if(isset($requestParams["uriID"]) && isset($requestParams["newURI"])){
-				
-				$uriID = $requestParams["uriID"];
-				$gazURIobj = new GazetteerURIs;
-				$issuesObj = new Issues;
-				$newPlaceID = $gazURIobj->getOrAddPlaceRecord($requestParams["newURI"]);
-				if($newPlaceID != false){
-					 $this->_helper->viewRenderer->setNoRender();
-					 $issuesObj->updateURIcloseIssues($uriID, $newPlaceID);
-					 $docID = $issuesObj->getDocumentAssociationByOldPlace($uriID);
-					 if($docID != false){
-						  $location = "../../gapvis/index.html#book/".$docID."/place/".$newPlaceID;
-					 }
-					 else{
-						  $location = "../../report/place-issues/".$newPlaceID;
-					 }
-					 header("Location: ".$location);
-					 
-				}
-				else{
-					 //problem! the new URI seems to have had some errors
-					 $this->view->placeIssues = $issuesObj->getPlaceIssues($uriID);
-					 $this->view->uriErrors = $gazURIobj->errors;
-					 $this->render("place-issues");
-				}
-		  }
-		  else{
-				header("HTTP/1.0 403 Forbidden");
-				$message = "Need a uriID amd a uri";
-				echo $message;
-		  }
+		  
+		if($this->acceptEdits){
+			if(isset($requestParams["uriID"]) && isset($requestParams["newURI"])){
+				  
+				  $uriID = $requestParams["uriID"];
+				  $gazURIobj = new GazetteerURIs;
+				  $issuesObj = new Issues;
+				  $newPlaceID = $gazURIobj->getOrAddPlaceRecord($requestParams["newURI"]);
+				  if($newPlaceID != false){
+					   $this->_helper->viewRenderer->setNoRender();
+					   $issuesObj->updateURIcloseIssues($uriID, $newPlaceID);
+					   $docID = $issuesObj->getDocumentAssociationByOldPlace($uriID);
+					   if($docID != false){
+							$location = "../../gapvis/index.html#book/".$docID."/place/".$newPlaceID;
+					   }
+					   else{
+							$location = "../../report/place-issues/".$newPlaceID;
+					   }
+					   header("Location: ".$location);
+					   
+				  }
+				  else{
+					   //problem! the new URI seems to have had some errors
+					   $this->view->placeIssues = $issuesObj->getPlaceIssues($uriID);
+					   $this->view->uriErrors = $gazURIobj->errors;
+					   $this->render("place-issues");
+				  }
+			}
+			else{
+				  header("HTTP/1.0 403 Forbidden");
+				  $message = "Need a uriID amd a uri";
+				  echo $message;
+			}
+		}
+		else{
+			header("HTTP/1.0 403 Forbidden");
+			echo $this->editMessage;
+		}
 	 }
 	 
 	 
-	 //use pleiades data to update this place
-	 function apiPleiadesUpdateAction(){
-		  $this->_helper->viewRenderer->setNoRender();
-		  $requestParams = $this->_request->getParams();
-		  Zend_Loader::loadClass("GazetteerURIs");
-		  if(isset($requestParams["uri"])){
-				
-				$gazURIobj = new GazetteerURIs;
-				$gazURIobj->updatePleiadesData($requestParams["uri"]);
-				$location = "../../report/search/?uri=".urlencode($requestParams["uri"]);
-				header("Location: ".$location);
-		  }
-		  else{
-				header("HTTP/1.0 403 Forbidden");
-				$message = "Need a uriID amd a uri";
-				echo $message;
-		  }
-	 }
+	//use pleiades data to update this place
+	function apiPleiadesUpdateAction(){
+		$this->_helper->viewRenderer->setNoRender();
+		$requestParams = $this->_request->getParams();
+		Zend_Loader::loadClass("GazetteerURIs");
+		if($this->acceptEdits){
+			if(isset($requestParams["uri"])){
+				  
+				  $gazURIobj = new GazetteerURIs;
+				  $gazURIobj->updatePleiadesData($requestParams["uri"]);
+				  $location = "../../report/search/?uri=".urlencode($requestParams["uri"]);
+				  header("Location: ".$location);
+			}
+			else{
+				  header("HTTP/1.0 403 Forbidden");
+				  $message = "Need a uriID amd a uri";
+				  echo $message;
+			}
+		}
+		else{
+			header("HTTP/1.0 403 Forbidden");
+			echo $this->editMessage;
+		}
+	}
 	 
 	 
 	 
     public function tokenIssuesAction(){
-		  $requestParams = $this->_request->getParams();
-		  Zend_Loader::loadClass("Issues");
-		  Zend_Loader::loadClass("Tokens");
-		  Zend_Loader::loadClass("Document");
-		  Zend_Loader::loadClass("GazetteerRefs");
-		  Zend_Loader::loadClass("GazetteerURIs");
-		  if(isset($requestParams["tokenID"])){
-				
-				$tokenID = $requestParams["tokenID"];
-				$issuesObj = new Issues;
-				$this->view->tokenIssues = $issuesObj->getTokenIssues($tokenID);
-				$this->view->requestParams = $requestParams;
-		  
-		  }
-		  else{
-				$this->view->requestURI = $this->_request->getRequestUri(); 
-				return $this->render('404error');
-		  }
+		$requestParams = $this->_request->getParams();
+		Zend_Loader::loadClass("Issues");
+		Zend_Loader::loadClass("Tokens");
+		Zend_Loader::loadClass("Document");
+		Zend_Loader::loadClass("GazetteerRefs");
+		Zend_Loader::loadClass("GazetteerURIs");
+		if(isset($requestParams["tokenID"])){
+				  
+			$tokenID = $requestParams["tokenID"];
+			$issuesObj = new Issues;
+			$this->view->tokenIssues = $issuesObj->getTokenIssues($tokenID);
+			$this->view->requestParams = $requestParams;
+			$this->view->acceptEdits = $this->acceptEdits;
+			
+		}
+		else{
+			$this->view->requestURI = $this->_request->getRequestUri(); 
+			return $this->render('404error');
+		}
 	 }
 	 
 	 public function tokenissuesjsonAction(){
@@ -268,72 +287,81 @@ class ReportController extends Zend_Controller_Action
 	 }
 	 
     public function addIssueAction(){
-		  $this->_helper->viewRenderer->setNoRender();
-		  $postParams =  $this->_request->getPost();
-	
-		  if($postParams){
-				Zend_Loader::loadClass("Issues");
-				$issuesObj = new Issues;
-				$issuesObj->postParams = $postParams;
-				$success = $issuesObj->postIssue();
-				
-				if($success){
-					 $message = array("success" => $success, "message" => "Issue successfully reported");
-					 $output = Zend_Json::encode($message);
-				}
-				else{
-					 header("HTTP/1.0 403 Forbidden");
-				}
-		  }
-		  else{
-				$message = array("success" => false, "message" => "Please POST issues to this URI.");
-				header("HTTP/1.0 405 Method Not Allowed");
-				header("Allow: POST");
-		  }
-		  
-		  $output = Zend_Json::encode($message);
-		  if(isset($requestParams["callback"])){
-				header('Content-Type: application/javascript; charset=utf8');
-				$output = $requestParams["callback"]."(".$output.");";
-		  }
-		  else{
-				header('Content-Type: application/json; charset=utf8');
-				header("Access-Control-Allow-Origin: *");
-		  }
-		  echo $output;
+		$this->_helper->viewRenderer->setNoRender();
+		if($this->acceptEdits){
+			$postParams =  $this->_request->getPost();
+			if($postParams){
+				  Zend_Loader::loadClass("Issues");
+				  $issuesObj = new Issues;
+				  $issuesObj->postParams = $postParams;
+				  $success = $issuesObj->postIssue();
+				  
+				  if($success){
+					   $message = array("success" => $success, "message" => "Issue successfully reported");
+					   $output = Zend_Json::encode($message);
+				  }
+				  else{
+					   header("HTTP/1.0 403 Forbidden");
+				  }
+			}
+			else{
+				  $message = array("success" => false, "message" => "Please POST issues to this URI.");
+				  header("HTTP/1.0 405 Method Not Allowed");
+				  header("Allow: POST");
+			}
+			
+			$output = Zend_Json::encode($message);
+			if(isset($requestParams["callback"])){
+				  header('Content-Type: application/javascript; charset=utf8');
+				  $output = $requestParams["callback"]."(".$output.");";
+			}
+			else{
+				  header('Content-Type: application/json; charset=utf8');
+				  header("Access-Control-Allow-Origin: *");
+			}
+			echo $output;
+		}
+		else{
+			header("HTTP/1.0 403 Forbidden");
+			echo $this->editMessage;
+		}
 	 }
 	 
 	 
 	 
 	 public function updateTokenPlaceAction(){
-		  $this->_helper->viewRenderer->setNoRender();
-		  $postParams =  $this->_request->getPost();
-	
-		  if($postParams){
-				Zend_Loader::loadClass("Issues");
-				Zend_Loader::loadClass("Tokens");
-				Zend_Loader::loadClass("Document");
-				Zend_Loader::loadClass("GazetteerRefs");
-				Zend_Loader::loadClass("GazetteerURIs");
-				$issuesObj = new Issues;
-				$issuesObj->postParams = $postParams;
-				$success = $issuesObj->alterTokensPlace();
-				
-				if(!$issuesObj->nextTokenID){
-					 $location = "../../report/token-issues/".$postParams["tokenID"];
-				}
-				else{
-					 $location = "../../report/token-issues/".$issuesObj->nextTokenID."?lastIssueID=".$issuesObj->lastIssueID."&newPlaceURI=".urlencode($issuesObj->newPlaceURI);
-				}
-				
-				header("Location: ".$location);
-		  }
-		  else{
-				$message = array("success" => false, "message" => "Please POST issues to this URI.");
-				header("HTTP/1.0 405 Method Not Allowed");
-				header("Allow: POST");
-		  }
-		  
+		$this->_helper->viewRenderer->setNoRender();
+		if($this->acceptEdits){
+			$postParams =  $this->_request->getPost();
+			if($postParams){
+				  Zend_Loader::loadClass("Issues");
+				  Zend_Loader::loadClass("Tokens");
+				  Zend_Loader::loadClass("Document");
+				  Zend_Loader::loadClass("GazetteerRefs");
+				  Zend_Loader::loadClass("GazetteerURIs");
+				  $issuesObj = new Issues;
+				  $issuesObj->postParams = $postParams;
+				  $success = $issuesObj->alterTokensPlace();
+				  
+				  if(!$issuesObj->nextTokenID){
+					   $location = "../../report/token-issues/".$postParams["tokenID"];
+				  }
+				  else{
+					   $location = "../../report/token-issues/".$issuesObj->nextTokenID."?lastIssueID=".$issuesObj->lastIssueID."&newPlaceURI=".urlencode($issuesObj->newPlaceURI);
+				  }
+				  
+				  header("Location: ".$location);
+			}
+			else{
+				  $message = array("success" => false, "message" => "Please POST issues to this URI.");
+				  header("HTTP/1.0 405 Method Not Allowed");
+				  header("Allow: POST");
+			}
+		}
+		else{
+			header("HTTP/1.0 403 Forbidden");
+			echo $this->editMessage;
+		}  
 	 }
 	 
 	 
@@ -342,61 +370,74 @@ class ReportController extends Zend_Controller_Action
 	 
 	 //deletes an issue. this doesn't really delete it, it just makes it go inactive
 	 public function deleteIssueAction(){
-		  $this->_helper->viewRenderer->setNoRender();
-		  $postParams =  $this->_request->getPost();
-		  Zend_Loader::loadClass("Issues");
-		  $issuesObj = new Issues;
-		  $success = false;
-		  if($postParams){
-				if(isset($postParams["tokenID"]) && isset($postParams["issueID"])){
-					 $issuesObj->deleteIssueByID($postParams["issueID"]);
-					 $location = "../../report/token-issues/".$postParams["tokenID"];
-					 header("Location: ".$location);
-				}
-				else{
-					 header("HTTP/1.0 403 Forbidden");
-					 echo "Need to POST to tokenID and issueID";
-				}
-				
-		  }
-		  else{
-				$message = array("success" => false, "message" => "Please POST issues to this URI.");
-				header('Content-Type: application/json; charset=utf8');
-				header("HTTP/1.0 405 Method Not Allowed");
-				header("Allow: POST");
-				$output = Zend_Json::encode($message);
-				echo $output;
-		  }
+		$this->_helper->viewRenderer->setNoRender();
+		if($this->acceptEdits){
+			
+			$postParams =  $this->_request->getPost();
+			Zend_Loader::loadClass("Issues");
+			$issuesObj = new Issues;
+			$success = false;
+			if($postParams){
+				  if(isset($postParams["tokenID"]) && isset($postParams["issueID"])){
+					   $issuesObj->deleteIssueByID($postParams["issueID"]);
+					   $location = "../../report/token-issues/".$postParams["tokenID"];
+					   header("Location: ".$location);
+				  }
+				  else{
+					   header("HTTP/1.0 403 Forbidden");
+					   echo "Need to POST to tokenID and issueID";
+				  }
+				  
+			}
+			else{
+				  $message = array("success" => false, "message" => "Please POST issues to this URI.");
+				  header('Content-Type: application/json; charset=utf8');
+				  header("HTTP/1.0 405 Method Not Allowed");
+				  header("Allow: POST");
+				  $output = Zend_Json::encode($message);
+				  echo $output;
+			}
+		}
+		else{
+			header("HTTP/1.0 403 Forbidden");
+			echo $this->editMessage;
+		}
 	 }
 	 
 	 //deletes an issue. this doesn't really delete it, it just makes it go inactive
 	 public function updateIssueAction(){
-		  $this->_helper->viewRenderer->setNoRender();
-		  $postParams =  $this->_request->getPost();
-		  Zend_Loader::loadClass("Issues");
-		  $issuesObj = new Issues;
-		  $success = false;
-		  if($postParams){
-				if(isset($postParams["tokenID"]) && isset($postParams["issueID"]) && isset($postParams["newNote"])){
-					 $issuesObj->updateIssueByID($postParams["issueID"], $postParams["newNote"]);
-					 $location = "../../report/token-issues/".$postParams["tokenID"];
-					 header("Location: ".$location);
-				}
-				else{
-					 header("HTTP/1.0 403 Forbidden");
-					 echo "Need to POST to tokenID and issueID";
-				}
-				
-		  }
-		  else{
-				$message = array("success" => false, "message" => "Please POST issues to this URI.");
-				header('Content-Type: application/json; charset=utf8');
-				header("HTTP/1.0 405 Method Not Allowed");
-				header("Allow: POST");
-				$output = Zend_Json::encode($message);
-				echo $output;
-		  }
-	 }
+		$this->_helper->viewRenderer->setNoRender();
+		if($this->acceptEdits){
+			$postParams =  $this->_request->getPost();
+			Zend_Loader::loadClass("Issues");
+			$issuesObj = new Issues;
+			$success = false;
+			if($postParams){
+				  if(isset($postParams["tokenID"]) && isset($postParams["issueID"]) && isset($postParams["newNote"])){
+					   $issuesObj->updateIssueByID($postParams["issueID"], $postParams["newNote"]);
+					   $location = "../../report/token-issues/".$postParams["tokenID"];
+					   header("Location: ".$location);
+				  }
+				  else{
+					   header("HTTP/1.0 403 Forbidden");
+					   echo "Need to POST to tokenID and issueID";
+				  }
+				  
+			}
+			else{
+				  $message = array("success" => false, "message" => "Please POST issues to this URI.");
+				  header('Content-Type: application/json; charset=utf8');
+				  header("HTTP/1.0 405 Method Not Allowed");
+				  header("Allow: POST");
+				  $output = Zend_Json::encode($message);
+				  echo $output;
+			}
+		}
+		else{
+			header("HTTP/1.0 403 Forbidden");
+			echo $this->editMessage;
+		}
+	}
  
  
 

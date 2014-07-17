@@ -325,6 +325,50 @@ class GazetteerRefs {
 		  
 	 }
 	 
+	 
+	 function updatePleiadesCoordsData(){
+		  $db = $this->startDB();
+		  
+		  $sql = "SELECT DISTINCT uri
+		  FROM gap_gazuris WHERE (CHAR_LENGTH(longitude) < 5 OR CHAR_LENGTH(latitude) < 5)
+		  AND uri LIKE 'http://pleiades.stoa.org/%' ";
+		  $result = $db->fetchAll($sql, 2);
+		  if($result){
+				foreach($result as $row){
+					 $update = false;
+					 $baseURI = $row["uri"];
+					 $jsonURI = $baseURI . "/json";
+					 $jsonURI = str_replace("//json", "/json", $jsonURI); //just in case of trailing slash
+					 sleep(.5);
+					 @$jsonStringData = file_get_contents($jsonURI);
+					 if($jsonStringData ){
+						  @$jsonData = Zend_Json::decode($jsonStringData);
+						  if(is_array($jsonData)){
+								$data = array();
+								if(isset($jsonData["title"])){
+									 $data["label"]= $jsonData["title"];
+								}
+								if(isset($jsonData["reprPoint"])){
+									 $data["longitude"]= $jsonData["reprPoint"][0];
+									 $data["latitude"]= $jsonData["reprPoint"][1];
+								}
+								$where = " uri = '$baseURI' ";
+								$db->update("gap_gazuris", $data, $where);
+								$update = true;
+						  }
+					 }
+					 if(!$update){
+						  $data = array("label" => "[Unknown place label]");
+						  $where = " uri = '$baseURI' ";
+						  $db->update("gap_gazuris", $data, $where);
+					 }
+					 
+				}
+		  }
+		  
+	 }
+	 
+	 
 	 //fixing bad decimal data.	 
 	 function fixMissingDecimals(){
 		  $db = $this->startDB();

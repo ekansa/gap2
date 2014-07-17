@@ -330,7 +330,16 @@ $requestParams = $this->requestParams;
 							<div class="tr">
 								<div class="td"> </div>
 								<div class="td">
+									<?php if($this->acceptEdits){ ?>
 									<button class="btn btn-mini" title="Report this issue" type="submit">Submit</button>
+									<?php
+									}else{
+									?>
+									<button class="btn btn-mini" title="Report this issue" type="submit" disabled>Submit</button>
+									<p><small>Editing and Reporting Disabled</small></p>
+									<?php
+									}//end else
+									?>
 								</div>
 							</div>
 						</form>
@@ -362,7 +371,15 @@ $requestParams = $this->requestParams;
 									<td><form method="post" action="../../report/delete-issue">
 											<input type="hidden" value="<?php echo $issue["id"]; ?>" name="issueID" />
 											<input type="hidden" value="<?php echo $issue["tokenID"]; ?>" name="tokenID" />
+											<?php if($this->acceptEdits){ ?>
 											<button class="btn btn-warning btn-mini" title="Delete this issue" type="submit">X</button>
+											<?php }
+											else{
+											?>
+											<button class="btn btn-inverse btn-mini" title="Delete this issue" type="submit" disabled>X</button>
+											<?php
+											}//end else
+											?>
 										</form>
 									</td>
 									<!-- <td><?php echo $issue["id"]; ?></td> -->
@@ -374,7 +391,15 @@ $requestParams = $this->requestParams;
 											<textarea name="newNote" class="issue-note" id="issue-note-<?php echo $issue["id"]; ?>" rows="4"><?php echo $issue["note"]; ?></textarea>
 											<br/>
 											<div id="up-mess-<?php echo $issue["id"]; ?>"></div>
+											<?php if($this->acceptEdits){ ?>
 											<button class="btn btn-inverse btn-mini" title="Delete this issue" type="submit">Update</button>
+											<?php }
+											else{
+											?>
+											<button class="btn btn-inverse btn-mini" title="Delete this issue" type="submit" disabled>Update</button>
+											<?php
+											}//end else
+											?>
 										</form>
 									</td>
 								</tr>
